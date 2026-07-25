@@ -90,6 +90,14 @@ mindmap
       Answer / generate / review / RCA modes
       Cream chat UI
       VPS deploy pack
+    Ch 10 - Build an MCP Server
+      FastMCP over 5,000 test cases
+      Tools - model invoked
+      Resources - app fetched by URI
+      Prompts - user invoked
+      Templated resource URIs
+      stdio JSON-RPC transport
+      MCP Inspector + Claude Desktop
     E2E AI QA Pipeline (blueprint)
       Jira JQL to test plan
       RAG test cases
@@ -222,6 +230,15 @@ mindmap
 │   ├── docker-compose.yml         qdrant + app + caddy — 24x7 VPS stack
 │   ├── deploy to VPS information.md   Step-by-step droplet runbook
 │   └── docs/                      architecture, phase 2 plan, JIRA MCP how-to
+│
+├── chapter_10_MCP_Creation_VIBE/  Build your own MCP server (FastMCP)
+│   ├── Prompt.md                  The RISE-CEPT brief used to generate it
+│   ├── resource/
+│   │   └── vwo_5000_test_cases.csv    5,000 VWO test cases (Jira CSV)
+│   └── testcase-creator-mcp/
+│       ├── server.py              3 tools + 4 resources + 2 prompts, stdio
+│       ├── pyproject.toml         Pinned fastmcp==3.4.4
+│       └── README.md              Install / run / Inspector / Claude Desktop
 │
 ├── E2E_QA_Pipeline/               End-to-end AI QA pipeline blueprint
 │   └── E2E_QA_Pipeline.md         8-step flow: Jira -> plan -> cases -> automation -> run -> RCA
@@ -891,6 +908,87 @@ Full design rationale (embedding model, vector DB, chunk sizes, preprocessing �
 
 ---
 
+## Chapter 10 — Build Your Own MCP Server
+
+`chapter_10_MCP_Creation_VIBE/testcase-creator-mcp/` is the flip side of every other chapter: instead of *consuming* AI tooling, you *build* the thing the AI plugs into. One ~250-line FastMCP server turns a flat 5,000-row test-case CSV into a live capability that Claude Desktop, Claude Code, Cursor, or any MCP client can call.
+
+**Concept:** MCP (Model Context Protocol) is a standard wire format that lets an LLM client talk to your data through three distinct primitives — **tools** (the model decides to call them), **resources** (the app fetches them by URI), and **prompts** (the user picks them from a menu). This server exposes all three over the same CSV so the difference is impossible to miss.
+
+**Why:** Pasting a 5,000-row CSV into a chat window burns the context window and goes stale the moment the file changes. An MCP server lets the model *query* the data on demand — 3 rows instead of 5,000 — and the same server works in every MCP client without rewriting anything.
+
+**Q&A — tools vs resources vs prompts:**
+- **Q: When is it a tool and not a resource?** A: Tools are for actions the **model** chooses mid-conversation and that take arguments — `search_test_cases("checkout", limit=5)`. Resources are for context the **app** pulls by URI before the model runs, like a file. Rule of thumb: if it needs arguments the model computes, it is a tool.
+- **Q: What is a templated resource for?** A: One URI pattern serving many documents. `testcases://module/{name}` covers all 17 modules without declaring 17 resources. Pair it with a plain resource listing the valid names, or clients have to guess.
+- **Q: What is the gotcha that bites everyone?** A: **Never write to stdout.** stdio transport uses stdout for the JSON-RPC stream, so one stray `print()` corrupts the session and the client disconnects with a parse error. Log to stderr via `logging` only.
+
+**The three primitives, one dataset:**
+
+```mermaid
+flowchart LR
+    CSV[("vwo_5000_test_cases.csv<br/>5,000 rows - read once at startup")] --> S["FastMCP server<br/>stdio JSON-RPC"]
+    M["LLM decides"] -->|"tools/call"| S
+    A["Client app fetches"] -->|"resources/read"| S
+    U["User picks from menu"] -->|"prompts/get"| S
+    S --> T["3 TOOLS<br/>search_test_cases<br/>get_test_case<br/>test_case_stats"]
+    S --> R["4 RESOURCES<br/>schema - all - modules<br/>module/NAME - templated"]
+    S --> P["2 PROMPTS<br/>review_test_case<br/>generate_regression_suite"]
+```
+
+**One decorator per primitive** — the docstring and type hints are functional code here, not commentary: FastMCP derives the JSON schema and the description the client LLM sees directly from them.
+
+```python
+from fastmcp import FastMCP
+from fastmcp.resources import ResourceContent
+
+mcp = FastMCP("vwo-testcases")
+
+@mcp.tool                                    # model-invoked
+def get_test_case(test_id: str) -> dict[str, Any]:
+    """Return one test case by its issue key, for example VWO-1001."""
+    row = _lookup(test_id)
+    if row is None:
+        raise ToolError(f"unknown test_id {test_id!r}; expected a key such as VWO-1001")
+    return _expand(row)
+
+@mcp.resource("testcases://module/{name}", mime_type="application/json")
+def module_resource(name: str) -> list[ResourceContent]:   # app-fetched, templated
+    """All test cases belonging to one module, matched case-insensitively."""
+    hits = _module_rows(name)
+    if not hits:
+        raise ResourceError(f"unknown module {name!r}; read testcases://modules first")
+    return _json_resource([_expand(row) for row in hits])
+
+@mcp.prompt                                  # user-invoked
+def review_test_case(test_id: str) -> str:
+    """Ask the model to critique one test case for coverage, clarity, and edge cases."""
+    return f"You are a senior QA lead...\n\n{_as_json(_expand(_lookup(test_id)))}\n\n..."
+
+if __name__ == "__main__":
+    mcp.run(show_banner=False)               # stdio transport
+```
+
+**Run and inspect:**
+```bash
+cd chapter_10_MCP_Creation_VIBE/testcase-creator-mcp
+uv sync
+npx -y @modelcontextprotocol/inspector uv run --directory "$(pwd)" python server.py
+```
+
+Open the printed `localhost:6274` URL, hit **Connect**, then walk the Tools / Resources / Prompts tabs. The chapter README carries an 11-step click checklist that exercises every primitive plus its error path.
+
+**Register it with Claude Code** (one line), or paste the `claude_desktop_config.json` snippet from the chapter README:
+```bash
+claude mcp add vwo-testcases -- uv run --directory "$(pwd)" python server.py
+```
+
+**Two FastMCP 3.x traps worth knowing** (both cost real debugging time):
+- A resource returning `list[dict]` is valid in FastMCP 2.x and **raises** on 3.x — `TypeError: contents[0] must be ResourceContent, got dict`. 3.x reads a returned list as a list of *content blocks*.
+- A resource returning a bare `str` works but **silently forces `mimeType: text/plain`**, overriding the `mime_type` declared on the decorator. Silent, so nothing ever surfaces it. Wrap in `ResourceContent(payload, mime_type="application/json")` — note the outer list.
+
+**Error handling is a feature, not boilerplate:** unknown IDs, unknown modules, bad `group_by`, and empty result sets all raise typed `ToolError` / `ResourceError` / `PromptError`. The client receives a readable message that names the valid values, so a wrong guess self-corrects in one round trip. The traceback stays on stderr where it belongs.
+
+---
+
 ## End-to-End AI QA Pipeline (Blueprint)
 
 **Concept:** `E2E_QA_Pipeline/` is the blueprint that ties the whole course together — an AI pipeline that reads a Jira story and drives it all the way to executed automation and an analysed results dashboard, with a RAG pipeline supplying historical test plans and cases along the way.
@@ -967,6 +1065,8 @@ You can read it linearly (chapter 01 → 07) or jump straight to a project:
 - **"I want hybrid retrieval + reranking on a real 5,000-row corpus."** → `chapter_07_RAG/Advance_RAG/`.
 - **"I want one cited answer across my whole QA knowledge base."** → `chapter_08_QABuddyAI/` (QA Buddy chat UI).
 - **"I want to deploy an internal QA RAG to a VPS, 24x7."** → `chapter_08_QABuddyAI/deploy to VPS information.md`.
+- **"I want to build my own MCP server and plug my data into Claude."** → `chapter_10_MCP_Creation_VIBE/testcase-creator-mcp/`.
+- **"I never understood MCP tools vs resources vs prompts."** → same folder — all three primitives sit in one file over one CSV.
 - **"I want the big picture — Jira story to executed automation."** → `E2E_QA_Pipeline/E2E_QA_Pipeline.md`.
 - **"I want to track job applications locally."** → `Project_Job_TRACKERAI/`.
 
@@ -983,6 +1083,7 @@ You can read it linearly (chapter 01 → 07) or jump straight to a project:
 - For Chapter 7 RAG Explorer: **Node.js 20+**, **Ollama** with `nomic-embed-text` pulled, **ChromaDB** (`pip install chromadb`), and a **Groq API key**.
 - For Chapter 7 Advanced RAG: **Python 3.10+** and `pip install -r requirements.txt` (Flask, qdrant-client, FlagEmbedding/torch, pandas), plus a **Groq API key**. Models download on first use.
 - For Chapter 8 QABuddy.ai: **Python 3.11+** (`uv` recommended) and `requirements.txt` (Flask, qdrant-client, FlagEmbedding/torch, transformers, pymupdf, pandas), a **Groq API key**; **Docker + docker-compose** only for the VPS deployment. bge-m3 + reranker (~4.6GB) download on first ingest.
+- For Chapter 10 MCP server: **Python 3.11+** and **uv**; `uv sync` pulls the pinned `fastmcp==3.4.4`. **Node.js** only if you want the MCP Inspector (`npx @modelcontextprotocol/inspector`). No API key needed — the server is local and read-only.
 - For Job Tracker AI: **Node.js 20.19+ or 22.12+** and npm for Vite 8.
 
 ## Chapter History
