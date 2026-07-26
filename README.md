@@ -98,6 +98,17 @@ mindmap
       Templated resource URIs
       stdio JSON-RPC transport
       MCP Inspector + Claude Desktop
+    Ch 11 - Python for Testers
+      23 runnable labs
+      ex_01 - print + comments
+      ex_02 - keywords + identifiers + variables
+        Identifier rules cheat sheet
+        Dynamic typing + type&#40;&#41;
+        BODMAS + max/min
+      ex_03 - literals + data types
+        Multi-line comments
+        Built-in functions
+        input&#40;&#41; + int&#40;&#41; casting
     E2E AI QA Pipeline (blueprint)
       Jira JQL to test plan
       RAG test cases
@@ -180,10 +191,12 @@ mindmap
 │   │   ├── AI3X_002_Flaky_Test_AIAgent.json
 │   │   ├── AI3X_003_Bug_Triage_AI_Agent.json
 │   │   └── AI3X_004_API_Contract_Validator.md
-│   └── flaky_test_analyzer_ai_Agent/
-│       ├── PROMPTS.md             Agent prompt + UI build prompt (shareable)
-│       ├── result1.json / result2.json   Sample Playwright runs
-│       └── ui/                    React UI proxied to the LangFlow API
+│   ├── flaky_test_analyzer_ai_Agent/
+│   │   ├── PROMPTS.md             Agent prompt + UI build prompt (shareable)
+│   │   ├── result1.json / result2.json   Sample Playwright runs
+│   │   └── ui/                    React UI proxied to the LangFlow API
+│   ├── langflow-up.sh             Start Docker + Langflow, wait for /health
+│   └── langflow-down.sh           Stop container + quit Docker Desktop
 │
 ├── chapter_06_AI_Social_Media_Content_Creation/   One idea to a full content pack
 │   ├── README.md
@@ -239,6 +252,23 @@ mindmap
 │       ├── server.py              3 tools + 4 resources + 2 prompts, stdio
 │       ├── pyproject.toml         Pinned fastmcp==3.4.4
 │       └── README.md              Install / run / Inspector / Claude Desktop
+│
+├── chapter_11_Python_Learning/    Python fundamentals for testers (23 labs)
+│   ├── ex_01_Python_Basics/
+│   │   ├── Lab001_Hello.py            print() with many arguments
+│   │   ├── Lab002_Comment.py          Single-line comments
+│   │   └── Lab003_Print.py            sep= and end= arguments
+│   ├── ex_02_Keywords_Identifier_Variables/
+│   │   ├── Lab004_Keyword.py          keyword.kwlist — the 35 reserved words
+│   │   ├── Lab005..009                Variables, identifiers, dynamic typing
+│   │   ├── Lab010..012                Arithmetic, BODMAS, multiple assignment
+│   │   ├── Lab013..015                str + int TypeError and str() fix
+│   │   └── rules_for_identifier.md    7 naming rules + PEP 8 + cheat sheet
+│   └── ex_03_Literals/
+│       ├── Lab016..018                Literals, single vs multi-line comments
+│       ├── Lab019_Data_Type.py        type(), max(), min()
+│       ├── Lab020_BuiltIn_Functions.py  pow(), abs()
+│       └── Lab021..023                input() and int() casting
 │
 ├── E2E_QA_Pipeline/               End-to-end AI QA pipeline blueprint
 │   └── E2E_QA_Pipeline.md         8-step flow: Jira -> plan -> cases -> automation -> run -> RCA
@@ -605,6 +635,15 @@ This chapter builds real QA agents on top of that API and contrasts LangFlow wit
 - `Project/AI3X_003_Bug_Triage_AI_Agent.json` — a bug-triage flow (API Request → Prompt → OpenRouter → Parser → Chat output).
 - `Project/AI3X_004_API_Contract_Validator.md` — the GET request + JSON Schema spec the validator flow runs on.
 - `flaky_test_analyzer_ai_Agent/ui/` — a React UI that drives the Flaky Test Analyzer through a Vite proxy.
+- `langflow-up.sh` / `langflow-down.sh` — one-command local LangFlow lifecycle (macOS + Docker Desktop).
+
+**Start and stop LangFlow locally:**
+```bash
+./chapter_05_AI_Agents_LangFlow/langflow-up.sh     # Docker up -> container -> poll /health -> prints http://localhost:7860
+./chapter_05_AI_Agents_LangFlow/langflow-down.sh   # stop container, quit Docker Desktop
+```
+
+`langflow-up.sh` creates the container on first run with `LANGFLOW_SAVE_DB_IN_CONFIG_DIR=true` and a bind mount to `langflow-data/`, so your flows survive a container prune. That directory is gitignored — it is ~90MB of local SQLite and cache, not source.
 
 **Why a QA engineer should care:** LangFlow turns an agent into a callable endpoint without backend boilerplate. The same flow you prototype on the canvas becomes the API your test harness, CI pipeline, or internal tool calls — no rewrite.
 
@@ -989,6 +1028,68 @@ claude mcp add vwo-testcases -- uv run --directory "$(pwd)" python server.py
 
 ---
 
+## Chapter 11 — Python for Testers
+
+`chapter_11_Python_Learning/` is the ground floor. Every automation framework, RAG script, and MCP server in this repo is Python — this chapter is 23 tiny runnable labs that get a manual tester from `print("Hello")` to `int(input(...))` without a single framework in the way.
+
+**Concept:** Three exercise folders, each one sitting. `ex_01_Python_Basics` is output and comments. `ex_02_Keywords_Identifier_Variables` is naming things and doing arithmetic with them. `ex_03_Literals` is data types, built-in functions, and reading user input. One file per idea, no file longer than 20 lines.
+
+**Why:** Most "learn Python" material teaches a language. A tester needs a *runnable mental model* fast — why `"PRAMOD" + 10` throws, why `age` and `Age` are two variables, why `input()` always hands back a string. Each lab is small enough to run, break, and re-run in under a minute.
+
+**Q&A — how to work through it:**
+- **Q: In what order do I run these?** A: Lab number order — `Lab001` to `Lab023` — across the three folders. The numbering is continuous, so the folder split is organisational, not a restart.
+- **Q: Do I need a virtualenv or any install?** A: No. Every lab is stdlib-only, so `python3 Lab00X.py` on a stock Python 3.11+ is enough. `keyword` (Lab004) ships with Python.
+- **Q: What's the single most common beginner error here?** A: `TypeError: can only concatenate str (not "int") to str` — Lab013 triggers it deliberately and Lab015 fixes it with `str()`. The same class of bug shows up later as `int(input(...))` in Lab022.
+
+**Learning path:**
+
+```mermaid
+flowchart TD
+    A["ex_01 — Basics<br/>Lab001-003"] --> A1["print&#40;&#41; with many args<br/>sep= and end=<br/># comments"]
+    A1 --> B["ex_02 — Keywords, Identifiers, Variables<br/>Lab004-015"]
+    B --> B1["35 reserved keywords<br/>identifier naming rules<br/>dynamic typing + type&#40;&#41;"]
+    B1 --> B2["arithmetic + BODMAS<br/>multiple assignment<br/>str + int TypeError -> str&#40;&#41;"]
+    B2 --> C["ex_03 — Literals and I/O<br/>Lab016-023"]
+    C --> C1["multi-line comments<br/>data types + built-ins<br/>input&#40;&#41; returns str -> int&#40;&#41;"]
+    C1 --> D["Ready for Chapters 07-10<br/>RAG scripts, Flask apps, MCP servers"]
+```
+
+**The lab that teaches the most in four lines** — `ex_03_Literals/Lab023_Strings.py`:
+
+```python
+value = input("Enter the value")
+print(value)
+print(type(value))   # <class 'str'> — ALWAYS str, even if you typed 42
+
+a_int = int(value)   # explicit cast; ValueError if the input wasn't numeric
+```
+
+Same trap, applied — `ex_03_Literals/Lab022_User_Input_Sum_Of_Two_numbers.py`:
+
+```python
+num1 = int(input("Enter a number: "))
+num2 = int(input("Enter another number: "))
+print(num1 + num2)   # without int(), "2" + "3" would print 23, not 5
+```
+
+**Identifier rules** live in `ex_02_Keywords_Identifier_Variables/rules_for_identifier.md` — 7 rules with valid/invalid examples, a PEP 8 naming table (`snake_case` / `UPPER_SNAKE` / `PascalCase`), and a cheat-sheet table of what passes and what raises:
+
+| Identifier | Valid? | Reason |
+|:-----------|:------:|:-------|
+| `_age`, `abc123`, `first_name` | Yes | letter or `_` start, no keyword |
+| `123abc` | No | starts with a digit |
+| `first-name` | No | hyphen is the minus operator |
+| `class` | No | one of the 35 reserved keywords |
+| `age` vs `Age` | Both | case sensitive — two different variables |
+
+**Run any lab:**
+```bash
+cd chapter_11_Python_Learning/ex_01_Python_Basics
+python3 Lab001_Hello.py
+```
+
+---
+
 ## End-to-End AI QA Pipeline (Blueprint)
 
 **Concept:** `E2E_QA_Pipeline/` is the blueprint that ties the whole course together — an AI pipeline that reads a Jira story and drives it all the way to executed automation and an analysed results dashboard, with a RAG pipeline supplying historical test plans and cases along the way.
@@ -1067,6 +1168,9 @@ You can read it linearly (chapter 01 → 07) or jump straight to a project:
 - **"I want to deploy an internal QA RAG to a VPS, 24x7."** → `chapter_08_QABuddyAI/deploy to VPS information.md`.
 - **"I want to build my own MCP server and plug my data into Claude."** → `chapter_10_MCP_Creation_VIBE/testcase-creator-mcp/`.
 - **"I never understood MCP tools vs resources vs prompts."** → same folder — all three primitives sit in one file over one CSV.
+- **"I'm a manual tester and I don't know Python yet."** → `chapter_11_Python_Learning/` — start at `ex_01_Python_Basics/Lab001_Hello.py`.
+- **"What can I name a variable in Python?"** → `chapter_11_Python_Learning/ex_02_Keywords_Identifier_Variables/rules_for_identifier.md`.
+- **"I want LangFlow up without remembering the docker run flags."** → `chapter_05_AI_Agents_LangFlow/langflow-up.sh` (and `langflow-down.sh` to stop).
 - **"I want the big picture — Jira story to executed automation."** → `E2E_QA_Pipeline/E2E_QA_Pipeline.md`.
 - **"I want to track job applications locally."** → `Project_Job_TRACKERAI/`.
 
@@ -1084,6 +1188,7 @@ You can read it linearly (chapter 01 → 07) or jump straight to a project:
 - For Chapter 7 Advanced RAG: **Python 3.10+** and `pip install -r requirements.txt` (Flask, qdrant-client, FlagEmbedding/torch, pandas), plus a **Groq API key**. Models download on first use.
 - For Chapter 8 QABuddy.ai: **Python 3.11+** (`uv` recommended) and `requirements.txt` (Flask, qdrant-client, FlagEmbedding/torch, transformers, pymupdf, pandas), a **Groq API key**; **Docker + docker-compose** only for the VPS deployment. bge-m3 + reranker (~4.6GB) download on first ingest.
 - For Chapter 10 MCP server: **Python 3.11+** and **uv**; `uv sync` pulls the pinned `fastmcp==3.4.4`. **Node.js** only if you want the MCP Inspector (`npx @modelcontextprotocol/inspector`). No API key needed — the server is local and read-only.
+- For Chapter 11 Python labs: **Python 3.11+** only. Every lab is stdlib-only — no pip install, no virtualenv, no API key.
 - For Job Tracker AI: **Node.js 20.19+ or 22.12+** and npm for Vite 8.
 
 ## Chapter History

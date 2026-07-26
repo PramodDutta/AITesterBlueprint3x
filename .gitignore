@@ -31,3 +31,11 @@ env
 # Python virtualenvs (uv sync creates these per-chapter)
 .venv/
 **/.venv/
+
+# Python bytecode
+__pycache__/
+*.py[cod]
+
+# LangFlow local runtime state (Docker volume + Chroma dumps, ~150MB)
+chapter_05_AI_Agents_LangFlow/langflow-data/
+chapter_05_AI_Agents_LangFlow/chroma_backups/
