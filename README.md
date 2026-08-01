@@ -99,7 +99,7 @@ mindmap
       stdio JSON-RPC transport
       MCP Inspector + Claude Desktop
     Ch 11 - Python for Testers
-      23 runnable labs
+      69 runnable labs
       ex_01 - print + comments
       ex_02 - keywords + identifiers + variables
         Identifier rules cheat sheet
@@ -109,6 +109,21 @@ mindmap
         Multi-line comments
         Built-in functions
         input&#40;&#41; + int&#40;&#41; casting
+        Escape sequences + raw strings
+      ex_04 - operators
+        Arithmetic, // and % and **
+        Comparison + logical + membership
+        Ternary one-liner
+      ex_05 - if / elif / else
+        Nested conditions + input guards
+      ex_06 - match-case
+        Python 3.10 structural switch
+      ex_07 - loops
+        for + range&#40;&#41;, while, break/continue/pass
+      ex_08 - functions
+        4 function types
+        Default + keyword args
+        Multiple return values
     E2E AI QA Pipeline (blueprint)
       Jira JQL to test plan
       RAG test cases
@@ -253,7 +268,7 @@ mindmap
 │       ├── pyproject.toml         Pinned fastmcp==3.4.4
 │       └── README.md              Install / run / Inspector / Claude Desktop
 │
-├── chapter_11_Python_Learning/    Python fundamentals for testers (23 labs)
+├── chapter_11_Python_Learning/    Python fundamentals for testers (69 labs)
 │   ├── ex_01_Python_Basics/
 │   │   ├── Lab001_Hello.py            print() with many arguments
 │   │   ├── Lab002_Comment.py          Single-line comments
@@ -264,11 +279,39 @@ mindmap
 │   │   ├── Lab010..012                Arithmetic, BODMAS, multiple assignment
 │   │   ├── Lab013..015                str + int TypeError and str() fix
 │   │   └── rules_for_identifier.md    7 naming rules + PEP 8 + cheat sheet
-│   └── ex_03_Literals/
-│       ├── Lab016..018                Literals, single vs multi-line comments
-│       ├── Lab019_Data_Type.py        type(), max(), min()
-│       ├── Lab020_BuiltIn_Functions.py  pow(), abs()
-│       └── Lab021..023                input() and int() casting
+│   ├── ex_03_Literals/
+│   │   ├── Lab016..018                Literals, single vs multi-line comments
+│   │   ├── Lab019_Data_Type.py        type(), max(), min()
+│   │   ├── Lab020_BuiltIn_Functions.py  pow(), abs()
+│   │   ├── Lab021..025                input(), int() casting, str concat
+│   │   ├── Lab026_Literals.py         bin 0b / oct 0o / hex 0x / float / bool / complex
+│   │   ├── Lab027_Escape_Char.py      \n  \t  \b
+│   │   ├── Lab028_String_Double_Single_Diff.py  r"" raw strings for Windows paths
+│   │   └── Lab029..030                Practice tasks (arithmetic, divmod)
+│   ├── ex_04_Operators/
+│   │   ├── Lab031..035                Arithmetic, //, %, **, unary +/-
+│   │   ├── Lab036..039                Comparison and logical operators
+│   │   ├── Lab040_Operators_P9.py     divmod(), tuple unpack, += -= *= (no ++)
+│   │   ├── Lab040_Ternary_Operator.py  value if cond else value
+│   │   ├── Lab041                     Ternary vs if/else on user input
+│   │   └── Lab042_Memership_Operator.py  in / not in + math module
+│   ├── ex_05_Condition_Loops/
+│   │   ├── Lab043_IF_Condition.py     if / else on int(input())
+│   │   ├── Lab044_ELSEIF.py           Nested if — sign then even/odd
+│   │   ├── Lab046_if_else_elif.py     Max of 3 numbers with elif
+│   │   └── src/.../Lab043_..._Optimized.py  Input validation guard + .strip()
+│   ├── ex_06_Switch_Match/
+│   │   ├── LabSwitch01.py             match-case day-of-week + case _ default
+│   │   └── LabSwitch02.py             match on test type (API/UI/Perf/Security)
+│   ├── ex_07_Loops/
+│   │   ├── Lab048..051                range(start, stop, step), for, while
+│   │   ├── Lab054..056                break, pass, condition-in-loop
+│   │   └── Lab058..059                Even numbers, continue
+│   └── ex_08_Functions/
+│       ├── Lab060..062                Built-in vs user-defined, def + call
+│       ├── Lab063..064                Parameters, return values
+│       ├── Lab065..067                Default params, multi-return, keyword args
+│       └── Lab068..069                input() into a function, all 4 function types
 │
 ├── E2E_QA_Pipeline/               End-to-end AI QA pipeline blueprint
 │   └── E2E_QA_Pipeline.md         8-step flow: Jira -> plan -> cases -> automation -> run -> RCA
@@ -1030,14 +1073,14 @@ claude mcp add vwo-testcases -- uv run --directory "$(pwd)" python server.py
 
 ## Chapter 11 — Python for Testers
 
-`chapter_11_Python_Learning/` is the ground floor. Every automation framework, RAG script, and MCP server in this repo is Python — this chapter is 23 tiny runnable labs that get a manual tester from `print("Hello")` to `int(input(...))` without a single framework in the way.
+`chapter_11_Python_Learning/` is the ground floor. Every automation framework, RAG script, and MCP server in this repo is Python — this chapter is 69 tiny runnable labs that get a manual tester from `print("Hello")` to writing their own functions without a single framework in the way.
 
-**Concept:** Three exercise folders, each one sitting. `ex_01_Python_Basics` is output and comments. `ex_02_Keywords_Identifier_Variables` is naming things and doing arithmetic with them. `ex_03_Literals` is data types, built-in functions, and reading user input. One file per idea, no file longer than 20 lines.
+**Concept:** Eight exercise folders, each one sitting. `ex_01_Python_Basics` is output and comments. `ex_02_Keywords_Identifier_Variables` is naming things and doing arithmetic with them. `ex_03_Literals` is data types, built-in functions, and reading user input. `ex_04_Operators` is every operator family. `ex_05_Condition_Loops` is `if / elif / else`. `ex_06_Switch_Match` is `match-case`. `ex_07_Loops` is `for` / `while` and the loop-control keywords. `ex_08_Functions` is the four function shapes. One file per idea, no file longer than 20 lines.
 
 **Why:** Most "learn Python" material teaches a language. A tester needs a *runnable mental model* fast — why `"PRAMOD" + 10` throws, why `age` and `Age` are two variables, why `input()` always hands back a string. Each lab is small enough to run, break, and re-run in under a minute.
 
 **Q&A — how to work through it:**
-- **Q: In what order do I run these?** A: Lab number order — `Lab001` to `Lab023` — across the three folders. The numbering is continuous, so the folder split is organisational, not a restart.
+- **Q: In what order do I run these?** A: Lab number order — `Lab001` to `Lab069` — across the eight folders. The numbering is continuous, so the folder split is organisational, not a restart.
 - **Q: Do I need a virtualenv or any install?** A: No. Every lab is stdlib-only, so `python3 Lab00X.py` on a stock Python 3.11+ is enough. `keyword` (Lab004) ships with Python.
 - **Q: What's the single most common beginner error here?** A: `TypeError: can only concatenate str (not "int") to str` — Lab013 triggers it deliberately and Lab015 fixes it with `str()`. The same class of bug shows up later as `int(input(...))` in Lab022.
 
@@ -1049,9 +1092,17 @@ flowchart TD
     A1 --> B["ex_02 — Keywords, Identifiers, Variables<br/>Lab004-015"]
     B --> B1["35 reserved keywords<br/>identifier naming rules<br/>dynamic typing + type&#40;&#41;"]
     B1 --> B2["arithmetic + BODMAS<br/>multiple assignment<br/>str + int TypeError -> str&#40;&#41;"]
-    B2 --> C["ex_03 — Literals and I/O<br/>Lab016-023"]
-    C --> C1["multi-line comments<br/>data types + built-ins<br/>input&#40;&#41; returns str -> int&#40;&#41;"]
-    C1 --> D["Ready for Chapters 07-10<br/>RAG scripts, Flask apps, MCP servers"]
+    B2 --> C["ex_03 — Literals and I/O<br/>Lab016-030"]
+    C --> C1["multi-line comments<br/>data types + built-ins<br/>input&#40;&#41; returns str -> int&#40;&#41;<br/>escape seq + raw strings"]
+    C1 --> E["ex_04 — Operators<br/>Lab031-042"]
+    E --> E1["arithmetic // % **<br/>comparison + logical<br/>membership + ternary"]
+    E1 --> F["ex_05 — if / elif / else<br/>Lab043-046"]
+    F --> G["ex_06 — match-case<br/>LabSwitch01-02"]
+    G --> H["ex_07 — Loops<br/>Lab048-059"]
+    H --> H1["for + range&#40;&#41;, while<br/>break / continue / pass"]
+    H1 --> I["ex_08 — Functions<br/>Lab060-069"]
+    I --> I1["4 function types<br/>default + keyword args<br/>multiple return values"]
+    I1 --> D["Ready for Chapters 07-10<br/>RAG scripts, Flask apps, MCP servers"]
 ```
 
 **The lab that teaches the most in four lines** — `ex_03_Literals/Lab023_Strings.py`:
@@ -1082,10 +1133,266 @@ print(num1 + num2)   # without int(), "2" + "3" would print 23, not 5
 | `class` | No | one of the 35 reserved keywords |
 | `age` vs `Age` | Both | case sensitive — two different variables |
 
+### ex_03 (cont.) — Literals, Escape Sequences, Raw Strings
+
+**Concept:** A literal is a value written directly in source. Python reads the same integer four ways — decimal `89`, binary `0b1010`, octal `0o130`, hex `0x12c` — plus `float`, `str`, `bool`, and `complex` (`1 + 7j`).
+
+**Why:** Testers hit non-decimal literals in API payloads, permission bits, and colour codes, and hit escape sequences the moment a Windows file path lands in a test fixture.
+
+**Q&A — why use this?**
+- **Q: When do I need `r""`?** A: Any Windows path or regex. `'C:\pramod\n.txt'` silently becomes a newline; `r"C:\pramod\n.txt"` stays literal.
+- **Q: Single or double quotes?** A: No difference in Python — `'C'` and `"C"` are identical `str`. Pick one and be consistent (PEP 8 has no preference).
+- **Q: How do I convert `"90"` to a number?** A: `int()`, `float()`, `str()` are the three casts. `int("90")` works; `int("90.5")` raises `ValueError`.
+
+```mermaid
+flowchart LR
+    L["Literal in source"] --> D["0b1010 -> binary"]
+    L --> O["0o130 -> octal"]
+    L --> H["0x12c -> hex"]
+    L --> S["'text' -> str"]
+    S --> ESC{"Has backslash?"}
+    ESC -->|"escape wanted"| E1["\\n \\t \\b interpreted"]
+    ESC -->|"literal wanted"| E2["r&#40;&#41; raw string prefix"]
+```
+
+`ex_03_Literals/Lab028_String_Double_Single_Diff.py`:
+
+```python
+c  = 'C'
+c1 = "C"
+print(c, c1)          # identical — Python has no char type
+
+# dir = 'C:\pramod\n.txt'   # \n becomes a NEWLINE — path is broken
+dir = r"C:\pramod\n.txt"    # raw: prints exactly as written
+print(dir)
+```
+
+---
+
+### ex_04 — Operators
+
+**Concept:** `ex_04_Operators/` walks all five operator families — arithmetic (`+ - * / // % **`), comparison (`== != > <`), logical (`and or not`), assignment (`+= -= *=`), and membership (`in` / `not in`) — plus the ternary one-liner.
+
+**Why:** Every assertion you will ever write is a comparison or a logical expression. Getting `/` vs `//`, and `=` vs `==`, wrong is the top source of silent wrong-result bugs in test code.
+
+**Q&A — why use this?**
+- **Q: What's the difference between `/` and `//`?** A: `/` always returns a `float` (`5/2 -> 2.5`); `//` is floor division and returns the quotient (`5//2 -> 2`). `%` gives the remainder. `divmod(5, 2)` returns both at once.
+- **Q: Does Python have `++` / `--`?** A: No. Use `x += 1` and `x -= 1`. `Lab040_Operators_P9.py` says this out loud because it trips up Java and JS testers.
+- **Q: When do I use the ternary?** A: One-line assignment or print where a full `if/else` block adds noise — `print("pass" if code == 200 else "fail")`. Anything with two statements per branch stays a real `if`.
+
+```mermaid
+flowchart TD
+    OP["Operators"] --> A["Arithmetic<br/>+ - * / // % **"]
+    OP --> C["Comparison<br/>== != > < >= <=<br/>-> bool"]
+    OP --> L["Logical<br/>and / or / not<br/>-> bool"]
+    OP --> AS["Assignment<br/>= += -= *=<br/>no ++ or --"]
+    OP --> M["Membership<br/>in / not in"]
+    C --> T["Ternary<br/>X if cond else Y"]
+    L --> T
+```
+
+`ex_04_Operators/Lab041_User_Input_Ternary_Operators.py` — the same rule written twice:
+
+```python
+user_age = int(input("Enter your age\n"))
+
+if user_age >= 18:
+    print("Yes You can go to GOA and vote")
+else:
+    print("Not you can't go and can't vote")
+
+# identical logic, one line
+print("Yes You can go to GOA and vote" if user_age >= 18 else "Not you can't go and can't vote")
+```
+
+| Operator | Result for `5 ? 2` | Type |
+|:---------|:-------------------|:-----|
+| `5 / 2` | `2.5` | always `float` |
+| `5 // 2` | `2` | floor quotient |
+| `5 % 2` | `1` | remainder |
+| `5 ** 2` | `25` | power |
+| `divmod(5, 2)` | `(2, 1)` | quotient + remainder tuple |
+
+---
+
+### ex_05 — Conditions (if / elif / else)
+
+**Concept:** `ex_05_Condition_Loops/` builds decision logic in three steps: a flat `if/else`, a nested `if` inside an `if`, then an `if / elif / else` chain that finds the max of three numbers.
+
+**Why:** A test is a decision. Every assertion, every skip rule, every environment switch in a framework is this construct — and nesting depth is where readability dies first.
+
+**Q&A — why use this?**
+- **Q: `elif` or a second `if`?** A: `elif` when the branches are mutually exclusive — Python stops at the first `True`. Separate `if`s all evaluate, which is slower and lets two branches both fire.
+- **Q: Why `.strip()` on `input()`?** A: A stray space makes `int(" 21 ")` fragile in real terminals. `Lab043_IF_Condition_Optimized.py` strips first, then validates the range before deciding.
+- **Q: How do I validate before branching?** A: Guard clause first. The optimized lab rejects `age <= 0 or age > 130` up front, so the business logic below never sees garbage.
+
+```mermaid
+flowchart TD
+    IN["int&#40;input&#40;&#41;.strip&#40;&#41;&#41;"] --> G{"age <= 0 or age > 130?"}
+    G -->|Yes| BAD["Enter a valid age"]
+    G -->|No| C{"age >= 21?"}
+    C -->|Yes| Y["Yes, can go club"]
+    C -->|No| N["No, can't go club"]
+```
+
+`ex_05_Condition_Loops/src/ex_05_Condition_Loops/Lab043_IF_Condition_Optimized.py`:
+
+```python
+age = int(input("Enter the age\n").strip())
+
+if age <= 0 or age > 130:
+    print("Enter a valid age")
+else:
+    if age >= 21:
+        print("Yes, can go club")
+    else:
+        print("No, can't go club")
+```
+
+---
+
+### ex_06 — match-case (Python's switch)
+
+**Concept:** `match-case` (Python 3.10+) matches a value against patterns top-down and runs the first hit. `case _` is the wildcard default.
+
+**Why:** A long `elif` chain that only ever compares one variable to constants reads better as a `match` — and in test code that shape appears constantly (test type, environment, browser, status code).
+
+**Q&A — why use this?**
+- **Q: Does it need `break` like Java/JS?** A: No. Python does not fall through — the matched case runs and the block exits.
+- **Q: What if nothing matches and there is no `case _`?** A: Nothing happens, silently. Always write `case _` as the invalid-input branch.
+- **Q: Which Python version?** A: 3.10 or newer. On 3.9 and below `match` is a `SyntaxError` — fall back to `elif` or a dict lookup.
+
+```mermaid
+flowchart TD
+    IN["test_type = input&#40;&#41;"] --> M{"match test_type"}
+    M -->|API| A["Run POSTMAN API testcase"]
+    M -->|UI| U["Run Selenium testcase"]
+    M -->|Performance| P["Run Performance testcase"]
+    M -->|Security| S["Run Security testcase"]
+    M -->|"case _"| D["Invalid Type."]
+```
+
+`ex_06_Switch_Match/LabSwitch02.py`:
+
+```python
+test_type = input("Enter the Test Type : API, UI, Performance, Security ")
+
+match test_type:
+    case "API":
+        print("We are running a POSTMAN API Testcase.")
+    case "UI":
+        print("We are running a Selenium Testcase.")
+    case "Performance":
+        print("We are running a  Performance Testcase.")
+    case "Security":
+        print("We are running a  Security Testcase.")
+    case _:
+        print("Invalid Type.")
+```
+
+---
+
+### ex_07 — Loops
+
+**Concept:** `ex_07_Loops/` covers `for i in range(start, stop, step)` (stop is exclusive), `while` with the I-C-U pattern (Initialize, Condition, Update), and the three loop-control keywords `break`, `continue`, `pass`.
+
+**Why:** Data-driven testing *is* a loop — one test body, many test IDs. Off-by-one on `range()` and a forgotten update line in `while` (infinite loop) are the two classic beginner failures, and both labs trigger them on purpose.
+
+**Q&A — why use this?**
+- **Q: `for` or `while`?** A: `for` when the count is known (`range(1, 6)` — 5 test cases). `while` when the exit depends on a condition (retry until pass, poll until ready).
+- **Q: `break` vs `continue` vs `pass`?** A: `break` exits the loop entirely, `continue` skips to the next iteration, `pass` does literally nothing (a syntactic placeholder so an empty block still parses).
+- **Q: Why does `range(1, 10)` stop at 9?** A: `stop` is exclusive. `range(10)` is 0-9, ten iterations — that's why `Lab050` uses `range(1, 6)` to get test IDs 1 through 5.
+
+```mermaid
+flowchart TD
+    S["Start"] --> I["Initialize<br/>test_id = 0"]
+    I --> C{"Condition<br/>test_id < 10"}
+    C -->|False| E["Exit loop"]
+    C -->|True| B["Body<br/>run the test case"]
+    B --> K{"break?"}
+    K -->|Yes| E
+    K -->|No| N{"continue?"}
+    N -->|Yes| U
+    N -->|No| U["Update<br/>test_id += 1"]
+    U --> C
+```
+
+`ex_07_Loops/Lab051_For_While.py` — the I-C-U pattern applied to test IDs:
+
+```python
+test_id = 0
+while test_id < 10:          # Condition
+    print("Running the testcase -> ", test_id)
+    test_id = test_id + 1    # Update — drop this line and it loops forever
+```
+
+`ex_07_Loops/Lab059.py` — `continue` as an odd-number filter:
+
+```python
+for number in range(10):
+    if number % 2 == 0:
+        continue          # skip evens, jump to next iteration
+    else:
+        print(number)     # 1 3 5 7 9
+```
+
+---
+
+### ex_08 — Functions
+
+**Concept:** A function is a named, reusable block. `ex_08_Functions/` builds all four shapes in order: no-param/no-return, param/no-return, param + default, and param + `return`.
+
+**Why:** Every fixture, helper, and page-object method you write later is one of these four. Defaults and keyword arguments are what make a test helper readable at the call site.
+
+**Q&A — why use this?**
+- **Q: Can a Python function return more than one value?** A: Yes — `return a + b, a - b, a * b` returns a tuple, unpacked at the call site into three variables.
+- **Q: Why keyword arguments?** A: They kill positional-order bugs. `display_information(role="QA", name="Pramod")` is order-independent and self-documenting at the call site.
+- **Q: What's the gotcha with default parameters?** A: They must come after non-default ones, and a *mutable* default (`def f(items=[])`) is shared across calls — use `None` and build inside. The labs stick to immutable defaults like `name="QA"`.
+
+```mermaid
+flowchart TD
+    F["def function"] --> T1["Type 1 — NRNP<br/>no param, no return<br/>greet&#40;&#41;"]
+    F --> T2["Type 2 — param, no return<br/>greet&#40;name&#41;"]
+    F --> T3["Type 3 — default param<br/>greet&#40;name='QA'&#41;"]
+    F --> T4["Type 4 — param + return<br/>sum_of_two&#40;a, b&#41; -> a + b"]
+    T4 --> MR["Multiple returns<br/>return a+b, a-b, a*b<br/>-> tuple unpack"]
+    T3 --> KW["Keyword args<br/>f&#40;role='QA', name='Pramod'&#41;"]
+```
+
+`ex_08_Functions/Lab066_Functions_Return_Multiple_Values.py` and `Lab067_Functions_Keyword_Arg.py`:
+
+```python
+def math_operations(a, b):
+    return a + b, a - b, a * b          # returns a tuple
+
+sum_result, diff_result, mul_result = math_operations(3, 4)
+print(sum_result, diff_result, mul_result)   # 7 -1 12
+
+
+def display_information(name, role):
+    print(f"Name : {name}, role is {role}")
+
+display_information(name="Pramod2", role="QA2")
+display_information(role="QA3", name="Pramod3")   # order does not matter
+```
+
+| Function type | Signature | Returns |
+|:--------------|:----------|:--------|
+| NRNP | `def greet():` | `None` |
+| Param, no return | `def greet(name):` | `None` |
+| Default param | `def greet(name="QA"):` | `None` |
+| Param + return | `def sum_of_two(a, b):` | value or tuple |
+
+---
+
 **Run any lab:**
 ```bash
 cd chapter_11_Python_Learning/ex_01_Python_Basics
 python3 Lab001_Hello.py
+
+# operators, conditions, loops, functions
+cd ../ex_08_Functions
+python3 Lab069_Functions_Types.py
 ```
 
 ---
@@ -1170,6 +1477,10 @@ You can read it linearly (chapter 01 → 07) or jump straight to a project:
 - **"I never understood MCP tools vs resources vs prompts."** → same folder — all three primitives sit in one file over one CSV.
 - **"I'm a manual tester and I don't know Python yet."** → `chapter_11_Python_Learning/` — start at `ex_01_Python_Basics/Lab001_Hello.py`.
 - **"What can I name a variable in Python?"** → `chapter_11_Python_Learning/ex_02_Keywords_Identifier_Variables/rules_for_identifier.md`.
+- **"What's the difference between `/`, `//` and `%`?"** → `chapter_11_Python_Learning/ex_04_Operators/Lab035_Operators_P4.py` and `Lab040_Operators_P9.py`.
+- **"Does Python have a switch statement?"** → `chapter_11_Python_Learning/ex_06_Switch_Match/` (`match-case`, Python 3.10+).
+- **"How do I loop over test cases and break early?"** → `chapter_11_Python_Learning/ex_07_Loops/`.
+- **"How do I write a function with default and keyword arguments?"** → `chapter_11_Python_Learning/ex_08_Functions/Lab069_Functions_Types.py`.
 - **"I want LangFlow up without remembering the docker run flags."** → `chapter_05_AI_Agents_LangFlow/langflow-up.sh` (and `langflow-down.sh` to stop).
 - **"I want the big picture — Jira story to executed automation."** → `E2E_QA_Pipeline/E2E_QA_Pipeline.md`.
 - **"I want to track job applications locally."** → `Project_Job_TRACKERAI/`.
