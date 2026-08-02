@@ -99,7 +99,7 @@ mindmap
       stdio JSON-RPC transport
       MCP Inspector + Claude Desktop
     Ch 11 - Python for Testers
-      69 runnable labs
+      90 runnable labs
       ex_01 - print + comments
       ex_02 - keywords + identifiers + variables
         Identifier rules cheat sheet
@@ -124,6 +124,29 @@ mindmap
         4 function types
         Default + keyword args
         Multiple return values
+        *args - infinite arguments
+        Nested function definitions
+      ex_09 - scopes
+        Local vs global variables
+        Shadowing inside a function
+        Inner function visibility
+      ex_10 - decorators
+        Wrapper pattern - before/after
+        @time_decorator for test timing
+        Stacked decorators - bottom-up
+      ex_11 - type conversion
+        int&#40;&#41; str&#40;&#41; float&#40;&#41; bool&#40;&#41; list&#40;&#41; tuple&#40;&#41;
+      ex_12 - lambda expressions
+        One-line anonymous functions
+        Ternary inside lambda
+      ex_13 - list
+        Mutable, indexed, mixed types
+        append / extend / insert / remove
+        pop / sort / slice / nested lists
+      ex_14 - tuple
+        Immutable - TypeError on assign
+        Single-element trailing comma
+        tuple&#40;&#41; and list&#40;&#41; round trip
     E2E AI QA Pipeline (blueprint)
       Jira JQL to test plan
       RAG test cases
@@ -268,7 +291,7 @@ mindmap
 │       ├── pyproject.toml         Pinned fastmcp==3.4.4
 │       └── README.md              Install / run / Inspector / Claude Desktop
 │
-├── chapter_11_Python_Learning/    Python fundamentals for testers (69 labs)
+├── chapter_11_Python_Learning/    Python fundamentals for testers (90 labs)
 │   ├── ex_01_Python_Basics/
 │   │   ├── Lab001_Hello.py            print() with many arguments
 │   │   ├── Lab002_Comment.py          Single-line comments
@@ -307,11 +330,40 @@ mindmap
 │   │   ├── Lab048..051                range(start, stop, step), for, while
 │   │   ├── Lab054..056                break, pass, condition-in-loop
 │   │   └── Lab058..059                Even numbers, continue
-│   └── ex_08_Functions/
-│       ├── Lab060..062                Built-in vs user-defined, def + call
-│       ├── Lab063..064                Parameters, return values
-│       ├── Lab065..067                Default params, multi-return, keyword args
-│       └── Lab068..069                input() into a function, all 4 function types
+│   ├── ex_08_Functions/
+│   │   ├── Lab060..062                Built-in vs user-defined, def + call
+│   │   ├── Lab063..064                Parameters, return values
+│   │   ├── Lab065..067                Default params, multi-return, keyword args
+│   │   ├── Lab068..069                input() into a function, all 4 function types
+│   │   ├── Lab071_IQ.py               All-default params called 5 different ways
+│   │   ├── Lab072_Infinite_Args.py    *args — variable-length argument tuple
+│   │   ├── Lab073_Real_Args.py        *args applied (make_pizza toppings)
+│   │   └── LabIQ02.py                 Nested def — inner function is not callable outside
+│   ├── ex_09_Functions_Scopes/
+│   │   ├── Lab075_Local_Variable.py   Local invisible outside, global visible inside
+│   │   ├── Lab076.py                  Public vs private "toilet" scope analogy
+│   │   ├── Lab077_Local_Var.py        Assigning to a global name shadows it locally
+│   │   └── Lab078_Inner_Functions.py  Closure read vs local shadow in sibling inners
+│   ├── ex_10_Decortors/
+│   │   ├── Lab079_Decortors.py        @add_security — wrapper before/after
+│   │   ├── Lab080_Decor.py            @before_after_ui_test — setup/teardown shape
+│   │   ├── Lab081.py                  The same thing without decorators (start/end)
+│   │   ├── Lab082.py                  @time_decorator + @print_logs stacked
+│   │   └── Lab083.py                  Stacking order — bottom decorator wraps first
+│   ├── ex_11_TypeConversion/
+│   │   └── Lab087_Type_Conversion.py  "10" -> int(); the 9 conversion built-ins
+│   ├── ex_12_Lambda_Exp/
+│   │   ├── Lab090.py                  def triple vs lambda num: num*3
+│   │   ├── Lab091_Lambda.py           Multi-arg lambdas (mul, sum of three)
+│   │   └── Lab094_User_Input_ODD_Even.py  Ternary inside lambda + IIFE one-liner
+│   ├── ex_13_LIST/
+│   │   ├── Lab096_List.py             [] literal, len(), indexing, IndexError
+│   │   ├── Lab097.py                  append / extend / insert / remove / copy
+│   │   └── Lab098_POP.py              pop, index, count, sort, slice, nested, del
+│   └── ex_14_Tuple/
+│       ├── Lab099_Tuple.py            Immutability TypeError + single-element (3,)
+│       ├── Lab100_Tuple.py            Tuples as frozen API URL config
+│       └── Lab101.py                  in, len, iterate, tuple() <-> list() round trip
 │
 ├── E2E_QA_Pipeline/               End-to-end AI QA pipeline blueprint
 │   └── E2E_QA_Pipeline.md         8-step flow: Jira -> plan -> cases -> automation -> run -> RCA
@@ -1073,9 +1125,9 @@ claude mcp add vwo-testcases -- uv run --directory "$(pwd)" python server.py
 
 ## Chapter 11 — Python for Testers
 
-`chapter_11_Python_Learning/` is the ground floor. Every automation framework, RAG script, and MCP server in this repo is Python — this chapter is 69 tiny runnable labs that get a manual tester from `print("Hello")` to writing their own functions without a single framework in the way.
+`chapter_11_Python_Learning/` is the ground floor. Every automation framework, RAG script, and MCP server in this repo is Python — this chapter is 90 tiny runnable labs that get a manual tester from `print("Hello")` to decorators, lambdas, and collections without a single framework in the way.
 
-**Concept:** Eight exercise folders, each one sitting. `ex_01_Python_Basics` is output and comments. `ex_02_Keywords_Identifier_Variables` is naming things and doing arithmetic with them. `ex_03_Literals` is data types, built-in functions, and reading user input. `ex_04_Operators` is every operator family. `ex_05_Condition_Loops` is `if / elif / else`. `ex_06_Switch_Match` is `match-case`. `ex_07_Loops` is `for` / `while` and the loop-control keywords. `ex_08_Functions` is the four function shapes. One file per idea, no file longer than 20 lines.
+**Concept:** Fourteen exercise folders, each one sitting. `ex_01_Python_Basics` is output and comments. `ex_02_Keywords_Identifier_Variables` is naming things and doing arithmetic with them. `ex_03_Literals` is data types, built-in functions, and reading user input. `ex_04_Operators` is every operator family. `ex_05_Condition_Loops` is `if / elif / else`. `ex_06_Switch_Match` is `match-case`. `ex_07_Loops` is `for` / `while` and the loop-control keywords. `ex_08_Functions` is the four function shapes plus `*args`. `ex_09_Functions_Scopes` is local vs global. `ex_10_Decortors` is the wrapper pattern that pytest fixtures and `@pytest.mark` are built on. `ex_11_TypeConversion` is the casting built-ins. `ex_12_Lambda_Exp` is one-line anonymous functions. `ex_13_LIST` and `ex_14_Tuple` are the two core collections: mutable vs immutable. One file per idea, no file longer than 20 lines.
 
 **Why:** Most "learn Python" material teaches a language. A tester needs a *runnable mental model* fast — why `"PRAMOD" + 10` throws, why `age` and `Age` are two variables, why `input()` always hands back a string. Each lab is small enough to run, break, and re-run in under a minute.
 
@@ -1102,7 +1154,18 @@ flowchart TD
     H --> H1["for + range&#40;&#41;, while<br/>break / continue / pass"]
     H1 --> I["ex_08 — Functions<br/>Lab060-069"]
     I --> I1["4 function types<br/>default + keyword args<br/>multiple return values"]
-    I1 --> D["Ready for Chapters 07-10<br/>RAG scripts, Flask apps, MCP servers"]
+    I1 --> J["ex_09 — Scopes<br/>Lab075-078"]
+    J --> J1["local vs global<br/>shadowing<br/>inner functions"]
+    J1 --> K["ex_10 — Decorators<br/>Lab079-083"]
+    K --> K1["wrapper before/after<br/>@time_decorator<br/>stacked = bottom-up"]
+    K1 --> L["ex_11 — Type Conversion<br/>Lab087"]
+    L --> M["ex_12 — Lambda<br/>Lab090-094"]
+    M --> M1["lambda a, b: a * b<br/>ternary inside lambda"]
+    M1 --> N["ex_13 — List<br/>Lab096-098"]
+    N --> N1["mutable, indexed<br/>append/extend/insert<br/>pop/sort/slice"]
+    N1 --> O["ex_14 — Tuple<br/>Lab099-101"]
+    O --> O1["immutable<br/>&#40;3,&#41; trailing comma<br/>tuple&#40;&#41; &lt;-&gt; list&#40;&#41;"]
+    O1 --> D["Ready for Chapters 07-10<br/>RAG scripts, Flask apps, MCP servers"]
 ```
 
 **The lab that teaches the most in four lines** — `ex_03_Literals/Lab023_Strings.py`:
@@ -1383,6 +1446,271 @@ display_information(role="QA3", name="Pramod3")   # order does not matter
 | Default param | `def greet(name="QA"):` | `None` |
 | Param + return | `def sum_of_two(a, b):` | value or tuple |
 
+**`*args` — infinite arguments** (`Lab072_Infinite_Args.py`, `Lab073_Real_Args.py`): when the caller decides how many values to pass, prefix the parameter with `*`. Python packs everything positional into a tuple.
+
+```python
+def print_mul_arg(*pramod_list):
+    for i in pramod_list:
+        print(i)
+
+print_mul_arg("pramod")
+print_mul_arg(2, 3, 1, 4)
+print_mul_arg("pramod", "dutta", "third", 3.14, True)   # mixed types are fine
+
+
+def make_pizza(*toppings):
+    print(toppings)                  # ('cheese', 'corn')
+
+make_pizza("cheese", "corn")
+make_pizza("tomato")
+```
+
+`Lab071_IQ.py` is the argument-resolution drill — one function with three defaults, called five ways (`sum_three()`, `sum_three(1, 2)`, `sum_three(b=67, a=10, c=45)`). `LabIQ02.py` shows a `def` inside a `def`: the inner name only exists during the outer call, so `f2()` at module level is a `NameError`.
+
+---
+
+### ex_09 — Scopes
+
+**Concept:** A variable created inside a function is *local* — it dies when the function returns. A variable created at module level is *global* — readable from inside any function. `ex_09_Functions_Scopes/` proves both directions with four labs.
+
+**Why:** Half of "why is my variable `None`?" in a test framework is a scope mistake — a helper set a local that the caller never sees, or a fixture reassigned a module constant and only shadowed it.
+
+**Q&A — why use this?**
+- **Q: Can a function read a global variable?** A: Yes, reading is free. `Lab075_Local_Variable.py` prints `pb_global_b` from inside `my_function()` with no declaration.
+- **Q: Can a function *change* a global?** A: Not by plain assignment. `Lab077_Local_Var.py` writes `public_toilet = "LPB"` inside `home()` and that creates a new local; the module-level value is untouched. You need the `global` keyword to actually rebind it.
+- **Q: What can an inner function see?** A: Its own locals plus the enclosing function's locals. `Lab078_Inner_Functions.py` has `inner_function()` read `var1 = 30` from the outer scope, while sibling `inner_function2()` defines its own `var1 = 100` and prints that instead. Neither can see the other's `var2`.
+
+```mermaid
+flowchart TD
+    G["Global scope<br/>public_toilet = 'PB'"] --> H["def home&#40;&#41;"]
+    G --> S["def stranger&#40;&#41;"]
+    H --> HL["local: private_toilet = 'PT'<br/>reads public_toilet ✅"]
+    S --> SL["reads public_toilet ✅<br/>private_toilet ❌ NameError"]
+    HL --> SH["public_toilet = 'LPB' inside home&#40;&#41;<br/>creates a NEW local<br/>global stays 'PB'"]
+```
+
+```python
+public_toilet = "PB"          # global
+
+def home():
+    private_toilet = "PT"     # local — only home() sees this
+    print(public_toilet)      # 'PB' — reading a global is fine
+
+def stranger():
+    print(public_toilet)      # 'PB'
+    # print(private_toilet)   # NameError: name 'private_toilet' is not defined
+```
+
+---
+
+### ex_10 — Decorators
+
+**Concept:** A decorator is a function that takes another function, wraps extra behaviour around it, and returns the wrapped version. `@add_security` above a `def` is shorthand for `drive = add_security(drive)`.
+
+**Why:** This is the exact machinery behind `@pytest.fixture`, `@pytest.mark.parametrize`, `@app.route`, and `@mcp.tool`. Once the wrapper pattern clicks, every framework annotation you will meet stops being magic. `Lab081.py` deliberately writes the same thing *without* a decorator (`start(); test_ui(); end()`) so the manual version and the decorated version sit side by side.
+
+**Q&A — why use this?**
+- **Q: What does the wrapper actually do?** A: Runs your "before" code, calls `func()`, runs your "after" code. That is setup/teardown around a test with zero edits to the test body.
+- **Q: `return wrapper` or `return wrapper()`?** A: `return wrapper` — no parentheses. Returning `wrapper()` calls it at decoration time (import time), so the "test" runs the moment the module loads and the decorated name becomes `None`. `Lab082.py` and `Lab083.py` show the correct form.
+- **Q: In what order do stacked decorators run?** A: Bottom-up at wrap time, top-down at call time. In `Lab082.py`, `@print_logs` is closest to the function so it wraps first, then `@time_decorator` wraps that — the timer therefore measures the logging too.
+
+```mermaid
+flowchart TD
+    A["@time_decorator"] --> B["@print_logs"]
+    B --> C["def test_ui_1&#40;&#41;"]
+    C --> D["Call test_ui_1&#40;&#41;"]
+    D --> E["time start"]
+    E --> F["'Start the logs'"]
+    F --> G["real test body<br/>time.sleep&#40;2&#41;"]
+    G --> H["'End of the log'"]
+    H --> I["time end -> print elapsed"]
+```
+
+```python
+import time
+
+def print_logs(func):
+    def wrapper():
+        print("Start the logs")
+        func()
+        print("End of the log")
+    return wrapper                       # no () here
+
+def time_decorator(func):
+    def wrapper():
+        start_time = time.time()
+        func()
+        end_time = time.time()
+        print("Total Time Take by Func -> ", end_time - start_time)
+    return wrapper
+
+@time_decorator
+@print_logs
+def test_ui_1():
+    print("Add a function, time taken by this function 1")
+    time.sleep(2)
+
+test_ui_1()
+```
+
+---
+
+### ex_11 — Type Conversion
+
+**Concept:** Explicit casting between built-in types with `int()`, `str()`, `float()`, `bool()`, `list()`, `tuple()`, `set()`, `dict()`, `complex()`.
+
+**Why:** `input()` always returns `str`, JSON numbers arrive as `str` from CSV exports, and API assertions compare `"200"` to `200` and fail. Casting is the fix, and `type()` is how you prove which one you are holding.
+
+**Q&A — why use this?**
+- **Q: How do I check what I actually have?** A: `print(type(a))` — `<class 'str'>` vs `<class 'int'>`. Do this before every "why did my assert fail" hunt.
+- **Q: Does `int("10.5")` work?** A: No — `ValueError`. Go through `float()` first: `int(float("10.5"))` gives `10`.
+- **Q: What is falsy when cast with `bool()`?** A: `0`, `""`, `[]`, `()`, `{}`, and `None`. Everything else is `True` — including the string `"False"`.
+
+```mermaid
+flowchart LR
+    S["'10' — str"] -->|int&#40;&#41;| I["10 — int"]
+    I -->|str&#40;&#41;| S
+    I -->|float&#40;&#41;| F["10.0 — float"]
+    L["[1, 2, 3] — list"] -->|tuple&#40;&#41;| T["&#40;1, 2, 3&#41; — tuple"]
+    T -->|list&#40;&#41;| L
+    I -->|bool&#40;&#41;| B["True — bool<br/>0 is the only falsy int"]
+```
+
+```python
+a = "10"
+print(type(a))     # <class 'str'>
+a = int(a)
+print(type(a))     # <class 'int'>
+
+# int(), str(), float(), bool(), list(), tuple(), set(), dict(), complex()
+```
+
+---
+
+### ex_12 — Lambda Expressions
+
+**Concept:** `lambda` builds an anonymous single-expression function inline. `lambda num: num * 3` is the same thing as a three-line `def triple_number(num)` with a `return`.
+
+**Why:** Lambdas are what you pass to `sorted(key=...)`, `filter()`, `map()`, and Playwright/pytest predicate arguments. Being able to read one is non-optional once you touch real test code.
+
+**Q&A — why use this?**
+- **Q: When do I use `lambda` over `def`?** A: When the function is one expression and used once, right where it is written. Anything with a branch, a loop, or a docstring stays a `def`.
+- **Q: Can a lambda take multiple arguments?** A: Yes — `lambda a, b: a * b` and `lambda a, b, c: a + b + c` (`Lab091_Lambda.py`). It can also take zero: `lambda: math.pow(...)`.
+- **Q: Can it have an `if`?** A: Only the ternary form — `lambda num: "Even" if num % 2 == 0 else "Odd"`. No statements, no `return` keyword; the expression *is* the return value.
+
+```mermaid
+flowchart TD
+    A["def triple_number&#40;num&#41;:<br/>&nbsp;&nbsp;&nbsp;&nbsp;return num*3"] -->|same behaviour| B["lambda num: num*3"]
+    B --> C["assign it<br/>f = lambda num: num*3"]
+    B --> D["call it inline — IIFE<br/>&#40;lambda n: ...&#41;&#40;value&#41;"]
+    B --> E["ternary inside<br/>'Even' if n%2==0 else 'Odd'"]
+```
+
+```python
+result_l_format = lambda num: num * 3
+print(result_l_format(3))                 # 9
+
+mul_l = lambda a, b: a * b
+print(mul_l(3, 4))                        # 12
+
+user_input = int(input("Enter the number"))
+check_even_odd_f = lambda num: "Even" if num % 2 == 0 else "Odd"
+print(check_even_odd_f(user_input))
+
+# one-liner: build it and call it immediately
+print((lambda num: "Even" if num % 2 == 0 else "Odd")(int(input("Enter the number: "))))
+```
+
+---
+
+### ex_13 — List
+
+**Concept:** A list is an ordered, indexed, **mutable** collection written with `[]`. It can hold mixed types, be grown, shrunk, sorted, sliced, and nested.
+
+**Why:** Every test suite is a list — test IDs, expected rows, API response arrays, grocery items. `for element in my_list` is the loop you will write more than any other.
+
+**Q&A — why use this?**
+- **Q: `append()` vs `extend()` vs `insert()`?** A: `append(x)` adds one item at the end. `extend([a, b])` adds each item of another list at the end. `insert(i, x)` puts one item at index `i` and shifts the rest right.
+- **Q: Does `copy()` give me an independent list?** A: Yes for a flat list — `Lab097.py` removes from the copy and the original is unchanged. For nested lists it is still a shallow copy; the inner lists are shared.
+- **Q: `pop()` vs `remove()` vs `del`?** A: `pop(i)` removes *by index* and returns the item (default last). `remove(x)` removes the first item *equal to `x`* and returns nothing. `del my_list[0]` removes by index and returns nothing.
+
+```mermaid
+flowchart TD
+    L["my_list = [1, 2, 3]<br/>mutable, indexed from 0"] --> ADD["Grow"]
+    L --> REM["Shrink"]
+    L --> RD["Read"]
+    ADD --> A1["append&#40;4&#41; — one item at end<br/>extend&#40;[7,8]&#41; — many at end<br/>insert&#40;1,'Dutta'&#41; — at index"]
+    REM --> R1["remove&#40;'Amit'&#41; — by value<br/>pop&#40;1&#41; — by index, returns it<br/>del my_list[0] — by index<br/>clear&#40;&#41; — empty it"]
+    RD --> D1["my_list[0] — index<br/>my_list[1:4] — slice<br/>len / max / min / sum<br/>20 in my_list — membership"]
+```
+
+```python
+my_list = [1, 2, 3]
+print(my_list[0])            # 1 — index from 0
+# print(my_list[6])          # IndexError: list index out of range
+
+my_list.append(4)            # [1, 2, 3, 4]
+my_list.extend([7, 8, 10])   # [1, 2, 3, 4, 7, 8, 10]
+my_list.insert(1, "Dutta")   # mixed types are allowed
+my_list.remove("Dutta")
+
+numbers = [10, 20, 30, 20, 40]
+print(numbers.index(20))     # 1 — first match
+print(numbers.count(20))     # 2
+print(numbers[1:4])          # slice: start, end-1
+print(max(numbers), min(numbers), sum(numbers))
+
+matrix = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
+print(matrix[1][2])          # 6 — nested list
+```
+
+---
+
+### ex_14 — Tuple
+
+**Concept:** A tuple is an ordered, indexed, **immutable** collection written with `()`. Same reading operations as a list; every write operation is gone.
+
+**Why:** Immutability is a guarantee, not a limitation. Environment URLs, expected status codes, and config constants should be impossible to reassign halfway through a suite — a tuple makes an accidental overwrite a crash at the line that caused it instead of a mystery failure three tests later.
+
+**Q&A — why use this?**
+- **Q: What happens if I try to change one?** A: `my_tuple[0] = 12` raises `TypeError: 'tuple' object does not support item assignment`. There is no `append()` either.
+- **Q: How do I write a one-element tuple?** A: With a trailing comma — `single = (3,)`. Without it, `(3)` is just the integer `3` in parentheses.
+- **Q: I need to edit one anyway.** A: Convert, edit, convert back: `list(my_tuple)` -> mutate -> `tuple(my_list)`. `Lab100_Tuple.py` and `Lab101.py` do the round trip both ways.
+
+```mermaid
+flowchart TD
+    T["my_tuple = &#40;1, 2, 3&#41;<br/>immutable"] --> OK["Allowed<br/>index, slice, len&#40;&#41;<br/>'Paris' in cities<br/>for c in colors"]
+    T --> NO["Blocked<br/>t[0] = 12 → TypeError<br/>t.append&#40;12&#41; → AttributeError"]
+    NO --> CONV["Need a change?<br/>list&#40;t&#41; → mutate → tuple&#40;l&#41;"]
+    T --> USE["Real use<br/>API_URLS = &#40;'…/python0x', '…'&#41;<br/>frozen config"]
+```
+
+```python
+my_tuple = (1, 2, 3)
+# my_tuple[0] = 12          # TypeError: 'tuple' object does not support item assignment
+
+single = (3,)                # trailing comma — without it this is an int
+print(type(single))          # <class 'tuple'>
+
+cities = ("London", "Paris", "Los Angeles", "Tokyo")
+print(len(cities))           # 4
+print("Paris" in cities)     # True
+
+# real use: frozen environment config
+API_URLS = ("https://sdet.live/python0x", "https://awesomeqa.com", "https://thetestingacademy.com")
+print(API_URLS[0])
+
+my_tuple = tuple([1, 2, 3])  # list -> tuple
+back_to_list = list(my_tuple)  # tuple -> list
+```
+
+| | List | Tuple |
+|:--|:--|:--|
+| Syntax | `[1, 2, 3]` | `(1, 2, 3)` |
+| Mutable | ✅ append / remove / sort | ❌ `TypeError` on assign |
+| One element | `[3]` | `(3,)` — comma required |
+| Use it for | test data you build up | frozen config, env URLs, constants |
+
 ---
 
 **Run any lab:**
@@ -1393,6 +1721,11 @@ python3 Lab001_Hello.py
 # operators, conditions, loops, functions
 cd ../ex_08_Functions
 python3 Lab069_Functions_Types.py
+
+# scopes, decorators, lambdas, collections
+cd ../ex_10_Decortors && python3 Lab082.py
+cd ../ex_13_LIST     && python3 Lab097.py
+cd ../ex_14_Tuple    && python3 Lab101.py
 ```
 
 ---
@@ -1481,6 +1814,11 @@ You can read it linearly (chapter 01 → 07) or jump straight to a project:
 - **"Does Python have a switch statement?"** → `chapter_11_Python_Learning/ex_06_Switch_Match/` (`match-case`, Python 3.10+).
 - **"How do I loop over test cases and break early?"** → `chapter_11_Python_Learning/ex_07_Loops/`.
 - **"How do I write a function with default and keyword arguments?"** → `chapter_11_Python_Learning/ex_08_Functions/Lab069_Functions_Types.py`.
+- **"How do I accept any number of arguments?"** → `chapter_11_Python_Learning/ex_08_Functions/Lab072_Infinite_Args.py` (`*args`).
+- **"Why can't my function see that variable?"** → `chapter_11_Python_Learning/ex_09_Functions_Scopes/` (local vs global, shadowing).
+- **"What is `@pytest.fixture` actually doing?"** → `chapter_11_Python_Learning/ex_10_Decortors/Lab082.py` — the wrapper pattern, stacked.
+- **"When do I use a lambda?"** → `chapter_11_Python_Learning/ex_12_Lambda_Exp/Lab091_Lambda.py`.
+- **"List or tuple?"** → `chapter_11_Python_Learning/ex_13_LIST/` and `ex_14_Tuple/` — mutable vs immutable, with a comparison table.
 - **"I want LangFlow up without remembering the docker run flags."** → `chapter_05_AI_Agents_LangFlow/langflow-up.sh` (and `langflow-down.sh` to stop).
 - **"I want the big picture — Jira story to executed automation."** → `E2E_QA_Pipeline/E2E_QA_Pipeline.md`.
 - **"I want to track job applications locally."** → `Project_Job_TRACKERAI/`.
