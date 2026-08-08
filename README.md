@@ -99,7 +99,7 @@ mindmap
       stdio JSON-RPC transport
       MCP Inspector + Claude Desktop
     Ch 11 - Python for Testers
-      90 runnable labs
+      108 runnable labs
       ex_01 - print + comments
       ex_02 - keywords + identifiers + variables
         Identifier rules cheat sheet
@@ -147,6 +147,18 @@ mindmap
         Immutable - TypeError on assign
         Single-element trailing comma
         tuple&#40;&#41; and list&#40;&#41; round trip
+      ex_15 - set + frozenset
+        Unique unordered values
+        Union + intersection + difference
+        Set comprehensions
+      ex_16 - map + filter
+        Transform every item with map&#40;&#41;
+        Select matching items with filter&#40;&#41;
+        QA result + response-time examples
+      ex_17 - dictionary
+        Key-value CRUD + iteration
+        Nested test data
+        zip + merge + frequency counting
     E2E AI QA Pipeline (blueprint)
       Jira JQL to test plan
       RAG test cases
@@ -291,7 +303,7 @@ mindmap
 │       ├── pyproject.toml         Pinned fastmcp==3.4.4
 │       └── README.md              Install / run / Inspector / Claude Desktop
 │
-├── chapter_11_Python_Learning/    Python fundamentals for testers (90 labs)
+├── chapter_11_Python_Learning/    Python fundamentals for testers (108 labs)
 │   ├── ex_01_Python_Basics/
 │   │   ├── Lab001_Hello.py            print() with many arguments
 │   │   ├── Lab002_Comment.py          Single-line comments
@@ -360,10 +372,22 @@ mindmap
 │   │   ├── Lab096_List.py             [] literal, len(), indexing, IndexError
 │   │   ├── Lab097.py                  append / extend / insert / remove / copy
 │   │   └── Lab098_POP.py              pop, index, count, sort, slice, nested, del
-│   └── ex_14_Tuple/
-│       ├── Lab099_Tuple.py            Immutability TypeError + single-element (3,)
-│       ├── Lab100_Tuple.py            Tuples as frozen API URL config
-│       └── Lab101.py                  in, len, iterate, tuple() <-> list() round trip
+│   ├── ex_14_Tuple/
+│   │   ├── Lab099_Tuple.py            Immutability TypeError + single-element (3,)
+│   │   ├── Lab100_Tuple.py            Tuples as frozen API URL config
+│   │   └── Lab101.py                  in, len, iterate, tuple() <-> list() round trip
+│   ├── ex_15_SET_MAP_DICT/
+│   │   ├── 102.py                     Set literals discard duplicates
+│   │   ├── 103_SET.py                 union, intersection, difference
+│   │   ├── 104_Set_Advance.py         set() conversion, add(), iteration
+│   │   └── 105_Extra.py               Set comprehension + frozenset
+│   ├── ex_16_MAP_Filters/
+│   │   ├── 106..108                   filter() with functions and lambdas
+│   │   └── 109..111                   map() transformations for QA data
+│   └── ex_17_Dict/
+│       ├── 112..115                   Dictionary CRUD + nested test data
+│       ├── 116_Dict_Imp.py            zip(), merge operator, get()
+│       └── 117..119                   Equality + character/vowel counting
 │
 ├── E2E_QA_Pipeline/               End-to-end AI QA pipeline blueprint
 │   └── E2E_QA_Pipeline.md         8-step flow: Jira -> plan -> cases -> automation -> run -> RCA
@@ -1125,14 +1149,14 @@ claude mcp add vwo-testcases -- uv run --directory "$(pwd)" python server.py
 
 ## Chapter 11 — Python for Testers
 
-`chapter_11_Python_Learning/` is the ground floor. Every automation framework, RAG script, and MCP server in this repo is Python — this chapter is 90 tiny runnable labs that get a manual tester from `print("Hello")` to decorators, lambdas, and collections without a single framework in the way.
+`chapter_11_Python_Learning/` is the ground floor. Every automation framework, RAG script, and MCP server in this repo is Python — this chapter is 108 tiny runnable labs that get a manual tester from `print("Hello")` to decorators, lambdas, and collections without a single framework in the way.
 
-**Concept:** Fourteen exercise folders, each one sitting. `ex_01_Python_Basics` is output and comments. `ex_02_Keywords_Identifier_Variables` is naming things and doing arithmetic with them. `ex_03_Literals` is data types, built-in functions, and reading user input. `ex_04_Operators` is every operator family. `ex_05_Condition_Loops` is `if / elif / else`. `ex_06_Switch_Match` is `match-case`. `ex_07_Loops` is `for` / `while` and the loop-control keywords. `ex_08_Functions` is the four function shapes plus `*args`. `ex_09_Functions_Scopes` is local vs global. `ex_10_Decortors` is the wrapper pattern that pytest fixtures and `@pytest.mark` are built on. `ex_11_TypeConversion` is the casting built-ins. `ex_12_Lambda_Exp` is one-line anonymous functions. `ex_13_LIST` and `ex_14_Tuple` are the two core collections: mutable vs immutable. One file per idea, no file longer than 20 lines.
+**Concept:** Seventeen focused exercise folders build the language one idea at a time. The path starts with output, variables, types, operators, conditions, loops, and functions; then moves through scope, decorators, conversion, lambdas, and Python's core collections. The final three folders cover sets and `frozenset`, functional transformations with `map()` / `filter()`, and dictionaries for realistic nested test data. Each file stays small enough to run, inspect, change, and re-run in a few minutes.
 
 **Why:** Most "learn Python" material teaches a language. A tester needs a *runnable mental model* fast — why `"PRAMOD" + 10` throws, why `age` and `Age` are two variables, why `input()` always hands back a string. Each lab is small enough to run, break, and re-run in under a minute.
 
 **Q&A — how to work through it:**
-- **Q: In what order do I run these?** A: Lab number order — `Lab001` to `Lab069` — across the eight folders. The numbering is continuous, so the folder split is organisational, not a restart.
+- **Q: In what order do I run these?** A: Follow the exercise folders from `ex_01` to `ex_17`, and the numbered examples from `001` through `119`. Some numbers are intentionally absent, so use the filenames present rather than expecting every integer.
 - **Q: Do I need a virtualenv or any install?** A: No. Every lab is stdlib-only, so `python3 Lab00X.py` on a stock Python 3.11+ is enough. `keyword` (Lab004) ships with Python.
 - **Q: What's the single most common beginner error here?** A: `TypeError: can only concatenate str (not "int") to str` — Lab013 triggers it deliberately and Lab015 fixes it with `str()`. The same class of bug shows up later as `int(input(...))` in Lab022.
 
@@ -1165,7 +1189,13 @@ flowchart TD
     N --> N1["mutable, indexed<br/>append/extend/insert<br/>pop/sort/slice"]
     N1 --> O["ex_14 — Tuple<br/>Lab099-101"]
     O --> O1["immutable<br/>&#40;3,&#41; trailing comma<br/>tuple&#40;&#41; &lt;-&gt; list&#40;&#41;"]
-    O1 --> D["Ready for Chapters 07-10<br/>RAG scripts, Flask apps, MCP servers"]
+    O1 --> P["ex_15 — Set + Frozenset<br/>Lab102-105"]
+    P --> P1["unique values<br/>union / intersection / difference<br/>set comprehensions"]
+    P1 --> Q["ex_16 — Map + Filter<br/>Lab106-111"]
+    Q --> Q1["select with filter&#40;&#41;<br/>transform with map&#40;&#41;<br/>functions + lambdas"]
+    Q1 --> R["ex_17 — Dictionary<br/>Lab112-119"]
+    R --> R1["key-value CRUD<br/>nested test data<br/>zip / merge / frequency count"]
+    R1 --> D["Ready for Chapters 07-10<br/>RAG scripts, Flask apps, MCP servers"]
 ```
 
 **The lab that teaches the most in four lines** — `ex_03_Literals/Lab023_Strings.py`:
@@ -1713,6 +1743,84 @@ back_to_list = list(my_tuple)  # tuple -> list
 
 ---
 
+### ex_15 — Set and Frozenset
+
+**Concept:** A set is a mutable collection of unique, unordered values. It is ideal for removing duplicates and comparing two groups with union (`|`), intersection (`&`), and difference (`-`). A `frozenset` keeps the same uniqueness rules but cannot be changed after creation.
+
+**Why:** QA data frequently needs comparison rather than position: which test IDs exist in either suite, which failures occur in both runs, or which expected permissions are missing from the actual response.
+
+**Q&A — why use this?**
+- **Q: Why did my duplicates disappear?** A: Uniqueness is the defining rule. `{1, 2, 3, 3}` contains only three values.
+- **Q: Can I rely on set order?** A: No. If output order matters, sort the result explicitly with `sorted(my_set)`.
+- **Q: `set` or `frozenset`?** A: Use `set` while adding or removing values. Use `frozenset` when the collection must stay fixed or needs to be used as a dictionary key.
+
+```python
+expected = {"login", "checkout", "logout"}
+actual = {"login", "search", "logout"}
+
+print(expected | actual)  # every unique test name
+print(expected & actual)  # tests present in both runs
+print(expected - actual)  # {'checkout'} — missing from actual
+
+squares = {x ** 2 for x in range(5)}
+fixed_ids = frozenset([1, 2, 3, 3])
+```
+
+---
+
+### ex_16 — Map and Filter
+
+**Concept:** `filter()` keeps items whose predicate is truthy; `map()` transforms every item with a function. Both return lazy iterator objects in Python 3, so the labs wrap them in `list()` to display and reuse the results.
+
+**Why:** These operations express common QA pipelines directly: keep only failed results, remove blank test names, normalize labels to uppercase, or convert response times from milliseconds to seconds.
+
+**Q&A — why use this?**
+- **Q: Why does printing `map(...)` not show my transformed values?** A: `map` and `filter` are lazy. Consume them with `list(...)`, a loop, or another iterator-aware function.
+- **Q: Named function or lambda?** A: Use a named `def` when the rule needs explanation or reuse. Use a lambda for one short expression at the call site.
+- **Q: Does `filter()` change the original list?** A: No. It produces a new iterator; the source list remains untouched.
+
+```python
+test_results = ["PASS", "FAIL", "PASS", "SKIP", "FAIL"]
+passed = list(filter(lambda result: result == "PASS", test_results))
+
+response_times_ms = [1200, 1500, 1800]
+response_times_s = list(map(lambda value: value / 1000, response_times_ms))
+
+print(passed)              # ['PASS', 'PASS']
+print(response_times_s)    # [1.2, 1.5, 1.8]
+```
+
+---
+
+### ex_17 — Dictionary
+
+**Concept:** A dictionary stores unique keys mapped to values. The labs cover lookup, insert, update, delete, membership, `.items()` iteration, safe `.get()` access, nested dictionaries, `dict(zip(...))`, and the Python 3.9+ merge operator (`|`).
+
+**Why:** JSON objects, API payloads, environment configuration, and data-driven test records all arrive in dictionary-shaped structures. Nested dictionary access is the bridge from Python fundamentals to real API assertions.
+
+**Q&A — why use this?**
+- **Q: `record["status"]` or `record.get("status")`?** A: Bracket lookup raises `KeyError` when the key is missing. `.get()` returns `None` or a default you provide, making optional fields easier to handle.
+- **Q: Does key order matter?** A: Python preserves insertion order, but access should still be by key rather than numeric position.
+- **Q: How do I count repeated values?** A: Start with `{}` and update with `counts[item] = counts.get(item, 0) + 1`.
+
+```python
+test_case = {
+    "id": "TC-101",
+    "status": "PASS",
+    "environment": {"browser": "Chrome", "region": "IN"},
+}
+
+print(test_case["status"])
+print(test_case["environment"]["browser"])
+test_case["status"] = "FAIL"
+
+char_count = {}
+for char in "automation":
+    char_count[char] = char_count.get(char, 0) + 1
+```
+
+---
+
 **Run any lab:**
 ```bash
 cd chapter_11_Python_Learning/ex_01_Python_Basics
@@ -1726,6 +1834,11 @@ python3 Lab069_Functions_Types.py
 cd ../ex_10_Decortors && python3 Lab082.py
 cd ../ex_13_LIST     && python3 Lab097.py
 cd ../ex_14_Tuple    && python3 Lab101.py
+
+# sets, map/filter, dictionaries
+cd ../ex_15_SET_MAP_DICT && python3 105_Extra.py
+cd ../ex_16_MAP_Filters  && python3 111_Map_IQ.py
+cd ../ex_17_Dict         && python3 119_Count_Vowel.py
 ```
 
 ---
@@ -1819,6 +1932,9 @@ You can read it linearly (chapter 01 → 07) or jump straight to a project:
 - **"What is `@pytest.fixture` actually doing?"** → `chapter_11_Python_Learning/ex_10_Decortors/Lab082.py` — the wrapper pattern, stacked.
 - **"When do I use a lambda?"** → `chapter_11_Python_Learning/ex_12_Lambda_Exp/Lab091_Lambda.py`.
 - **"List or tuple?"** → `chapter_11_Python_Learning/ex_13_LIST/` and `ex_14_Tuple/` — mutable vs immutable, with a comparison table.
+- **"How do I remove duplicates or compare two test suites?"** → `chapter_11_Python_Learning/ex_15_SET_MAP_DICT/` — sets, set algebra, comprehensions, and `frozenset`.
+- **"How do I keep or transform selected test results?"** → `chapter_11_Python_Learning/ex_16_MAP_Filters/` — `filter()` and `map()` with functions and lambdas.
+- **"How do I model an API response or nested test record?"** → `chapter_11_Python_Learning/ex_17_Dict/` — dictionary CRUD, nesting, merge, and frequency-count exercises.
 - **"I want LangFlow up without remembering the docker run flags."** → `chapter_05_AI_Agents_LangFlow/langflow-up.sh` (and `langflow-down.sh` to stop).
 - **"I want the big picture — Jira story to executed automation."** → `E2E_QA_Pipeline/E2E_QA_Pipeline.md`.
 - **"I want to track job applications locally."** → `Project_Job_TRACKERAI/`.
