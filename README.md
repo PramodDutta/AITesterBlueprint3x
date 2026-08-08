@@ -99,7 +99,7 @@ mindmap
       stdio JSON-RPC transport
       MCP Inspector + Claude Desktop
     Ch 11 - Python for Testers
-      108 runnable labs
+      110 runnable labs
       ex_01 - print + comments
       ex_02 - keywords + identifiers + variables
         Identifier rules cheat sheet
@@ -159,6 +159,10 @@ mindmap
         Key-value CRUD + iteration
         Nested test data
         zip + merge + frequency counting
+      ex_18 - object-oriented Python
+        Classes + objects
+        Attributes + methods
+        self + object references
     E2E AI QA Pipeline (blueprint)
       Jira JQL to test plan
       RAG test cases
@@ -303,7 +307,7 @@ mindmap
 │       ├── pyproject.toml         Pinned fastmcp==3.4.4
 │       └── README.md              Install / run / Inspector / Claude Desktop
 │
-├── chapter_11_Python_Learning/    Python fundamentals for testers (108 labs)
+├── chapter_11_Python_Learning/    Python fundamentals for testers (110 labs)
 │   ├── ex_01_Python_Basics/
 │   │   ├── Lab001_Hello.py            print() with many arguments
 │   │   ├── Lab002_Comment.py          Single-line comments
@@ -384,10 +388,14 @@ mindmap
 │   ├── ex_16_MAP_Filters/
 │   │   ├── 106..108                   filter() with functions and lambdas
 │   │   └── 109..111                   map() transformations for QA data
-│   └── ex_17_Dict/
-│       ├── 112..115                   Dictionary CRUD + nested test data
-│       ├── 116_Dict_Imp.py            zip(), merge operator, get()
-│       └── 117..119                   Equality + character/vowel counting
+│   ├── ex_17_Dict/
+│   │   ├── 112..115                   Dictionary CRUD + nested test data
+│   │   ├── 116_Dict_Imp.py            zip(), merge operator, get()
+│   │   └── 117..119                   Equality + character/vowel counting
+│   └── ex_18_OOPs_Python/
+│       └── 01_Class_Object/
+│           ├── 120_Class.py               Person class, objects, attributes, methods
+│           └── 122_Clas_DOG.py            Dog class, self, object reference
 │
 ├── E2E_QA_Pipeline/               End-to-end AI QA pipeline blueprint
 │   └── E2E_QA_Pipeline.md         8-step flow: Jira -> plan -> cases -> automation -> run -> RCA
@@ -1149,14 +1157,14 @@ claude mcp add vwo-testcases -- uv run --directory "$(pwd)" python server.py
 
 ## Chapter 11 — Python for Testers
 
-`chapter_11_Python_Learning/` is the ground floor. Every automation framework, RAG script, and MCP server in this repo is Python — this chapter is 108 tiny runnable labs that get a manual tester from `print("Hello")` to decorators, lambdas, and collections without a single framework in the way.
+`chapter_11_Python_Learning/` is the ground floor. Every automation framework, RAG script, and MCP server in this repo is Python — this chapter is 110 tiny runnable labs that get a manual tester from `print("Hello")` to decorators, collections, and object-oriented programming without a framework in the way.
 
-**Concept:** Seventeen focused exercise folders build the language one idea at a time. The path starts with output, variables, types, operators, conditions, loops, and functions; then moves through scope, decorators, conversion, lambdas, and Python's core collections. The final three folders cover sets and `frozenset`, functional transformations with `map()` / `filter()`, and dictionaries for realistic nested test data. Each file stays small enough to run, inspect, change, and re-run in a few minutes.
+**Concept:** Eighteen focused exercise folders build the language one idea at a time. The path starts with output, variables, types, operators, conditions, loops, and functions; then moves through scope, decorators, conversion, lambdas, and Python's core collections. The final folders cover sets and `frozenset`, functional transformations with `map()` / `filter()`, dictionaries for realistic nested test data, and the class/object model used by automation frameworks. Each file stays small enough to run, inspect, change, and re-run in a few minutes.
 
 **Why:** Most "learn Python" material teaches a language. A tester needs a *runnable mental model* fast — why `"PRAMOD" + 10` throws, why `age` and `Age` are two variables, why `input()` always hands back a string. Each lab is small enough to run, break, and re-run in under a minute.
 
 **Q&A — how to work through it:**
-- **Q: In what order do I run these?** A: Follow the exercise folders from `ex_01` to `ex_17`, and the numbered examples from `001` through `119`. Some numbers are intentionally absent, so use the filenames present rather than expecting every integer.
+- **Q: In what order do I run these?** A: Follow the exercise folders from `ex_01` to `ex_18`, and the numbered examples from `001` through `122`. Some numbers are intentionally absent, so use the filenames present rather than expecting every integer.
 - **Q: Do I need a virtualenv or any install?** A: No. Every lab is stdlib-only, so `python3 Lab00X.py` on a stock Python 3.11+ is enough. `keyword` (Lab004) ships with Python.
 - **Q: What's the single most common beginner error here?** A: `TypeError: can only concatenate str (not "int") to str` — Lab013 triggers it deliberately and Lab015 fixes it with `str()`. The same class of bug shows up later as `int(input(...))` in Lab022.
 
@@ -1195,7 +1203,9 @@ flowchart TD
     Q --> Q1["select with filter&#40;&#41;<br/>transform with map&#40;&#41;<br/>functions + lambdas"]
     Q1 --> R["ex_17 — Dictionary<br/>Lab112-119"]
     R --> R1["key-value CRUD<br/>nested test data<br/>zip / merge / frequency count"]
-    R1 --> D["Ready for Chapters 07-10<br/>RAG scripts, Flask apps, MCP servers"]
+    R1 --> S["ex_18 — OOP<br/>Lab120 + Lab122"]
+    S --> S1["class + object<br/>attributes + methods<br/>self + object references"]
+    S1 --> D["Ready for Chapters 07-10<br/>RAG scripts, Flask apps, MCP servers"]
 ```
 
 **The lab that teaches the most in four lines** — `ex_03_Literals/Lab023_Strings.py`:
@@ -1821,6 +1831,33 @@ for char in "automation":
 
 ---
 
+### ex_18 — Object-Oriented Python
+
+**Concept:** A class is a blueprint that groups data (attributes) and behaviour (methods). Calling the class creates an object; each method receives that object as its first `self` parameter. The opening labs define `Person` and `Dog` classes, create multiple object references, read attributes, and call methods with and without arguments or return values.
+
+**Why:** Page objects, API clients, test-data models, and framework fixtures are all built from classes. Understanding how `self` connects a method to one specific object is the first step toward reading and designing maintainable automation code.
+
+**Q&A — why use this?**
+- **Q: Class or object?** A: `Dog` is the class blueprint; `chow = Dog()` creates an object and stores its reference in `chow`.
+- **Q: Why must a method declare `self`?** A: Python passes the current object automatically when you call `chow.bark()`. Inside the method, `self.name` means the `name` attribute on that object.
+- **Q: Is a method different from a function?** A: A method is a function defined inside a class and called through a class or object. A standalone `def` such as `function_outside()` is not attached to an object.
+
+```python
+class Dog:
+    name = None
+    breed = None
+
+    def bark(self):
+        print("Barking")
+        print(self.name)
+
+chow = Dog()
+chow.name = "Chow Chow"
+chow.bark()
+```
+
+---
+
 **Run any lab:**
 ```bash
 cd chapter_11_Python_Learning/ex_01_Python_Basics
@@ -1839,6 +1876,11 @@ cd ../ex_14_Tuple    && python3 Lab101.py
 cd ../ex_15_SET_MAP_DICT && python3 105_Extra.py
 cd ../ex_16_MAP_Filters  && python3 111_Map_IQ.py
 cd ../ex_17_Dict         && python3 119_Count_Vowel.py
+
+# classes and objects
+cd ../ex_18_OOPs_Python/01_Class_Object
+python3 120_Class.py
+python3 122_Clas_DOG.py
 ```
 
 ---
@@ -1935,6 +1977,7 @@ You can read it linearly (chapter 01 → 07) or jump straight to a project:
 - **"How do I remove duplicates or compare two test suites?"** → `chapter_11_Python_Learning/ex_15_SET_MAP_DICT/` — sets, set algebra, comprehensions, and `frozenset`.
 - **"How do I keep or transform selected test results?"** → `chapter_11_Python_Learning/ex_16_MAP_Filters/` — `filter()` and `map()` with functions and lambdas.
 - **"How do I model an API response or nested test record?"** → `chapter_11_Python_Learning/ex_17_Dict/` — dictionary CRUD, nesting, merge, and frequency-count exercises.
+- **"How do Python classes, objects, and `self` work?"** → `chapter_11_Python_Learning/ex_18_OOPs_Python/01_Class_Object/` — the `Person` and `Dog` class labs.
 - **"I want LangFlow up without remembering the docker run flags."** → `chapter_05_AI_Agents_LangFlow/langflow-up.sh` (and `langflow-down.sh` to stop).
 - **"I want the big picture — Jira story to executed automation."** → `E2E_QA_Pipeline/E2E_QA_Pipeline.md`.
 - **"I want to track job applications locally."** → `Project_Job_TRACKERAI/`.
