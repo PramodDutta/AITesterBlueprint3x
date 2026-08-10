@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Python math Module - All Functions</title>
+  <style>
+    body { font-family: -apple-system, system-ui, sans-serif; max-width: 760px; margin: 2rem auto; padding: 0 1rem; line-height: 1.55; color: #222; }
+    pre  { background: #f4f4f4; padding: 1rem; overflow-x: auto; border-radius: 6px; }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+    h1, h2, h3 { line-height: 1.25; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { border: 1px solid #ddd; padding: 6px 10px; text-align: left; vertical-align: top; }
+    th { background: #f7f7f7; }
+  </style>
+</head>
+<body>
+<h1>Python <code>math</code> Module - All Functions</h1>
+<p>Verified on Python 3.13.3. Import with <code>import math</code>. Works on real numbers only (use <code>cmath</code> for complex).</p>
+
+<h2>Constants (not functions)</h2>
+<table>
+<tr><th>Name</th><th>Value</th></tr>
+<tr><td><code>math.pi</code></td><td>3.141592653589793</td></tr>
+<tr><td><code>math.e</code></td><td>2.718281828459045</td></tr>
+<tr><td><code>math.tau</code></td><td>6.283185307179586 (2&pi;)</td></tr>
+<tr><td><code>math.inf</code></td><td>positive infinity</td></tr>
+<tr><td><code>math.nan</code></td><td>not-a-number</td></tr>
+</table>
+
+<h2>1. Number-theoretic &amp; representation</h2>
+<table>
+<tr><th>Function</th><th>What it does</th></tr>
+<tr><td><code>ceil(x)</code></td><td>Smallest integer &ge; x</td></tr>
+<tr><td><code>floor(x)</code></td><td>Largest integer &le; x</td></tr>
+<tr><td><code>trunc(x)</code></td><td>Drop fractional part (toward zero)</td></tr>
+<tr><td><code>fabs(x)</code></td><td>Absolute value as float</td></tr>
+<tr><td><code>factorial(n)</code></td><td>n! for non-negative int</td></tr>
+<tr><td><code>gcd(*ints)</code></td><td>Greatest common divisor</td></tr>
+<tr><td><code>lcm(*ints)</code></td><td>Least common multiple</td></tr>
+<tr><td><code>comb(n, k)</code></td><td>Combinations nCk</td></tr>
+<tr><td><code>perm(n, k=None)</code></td><td>Permutations nPk</td></tr>
+<tr><td><code>isqrt(n)</code></td><td>Integer square root (floor)</td></tr>
+<tr><td><code>fmod(x, y)</code></td><td>C-style float remainder</td></tr>
+<tr><td><code>remainder(x, y)</code></td><td>IEEE 754 remainder</td></tr>
+<tr><td><code>modf(x)</code></td><td>Returns (fractional, integer) parts as floats</td></tr>
+<tr><td><code>frexp(x)</code></td><td>Returns (mantissa, exponent) with x = m * 2**e</td></tr>
+<tr><td><code>ldexp(m, e)</code></td><td>Inverse of frexp: m * 2**e</td></tr>
+<tr><td><code>copysign(x, y)</code></td><td>Magnitude of x, sign of y</td></tr>
+<tr><td><code>nextafter(x, y, steps=1)</code></td><td>Next float after x toward y</td></tr>
+<tr><td><code>ulp(x)</code></td><td>Value of least significant bit of x</td></tr>
+<tr><td><code>fma(x, y, z)</code></td><td>Fused multiply-add x*y+z, single rounding (3.13+)</td></tr>
+<tr><td><code>isclose(a, b, *, rel_tol, abs_tol)</code></td><td>Approximate equality test</td></tr>
+<tr><td><code>isfinite(x)</code></td><td>True if not inf and not nan</td></tr>
+<tr><td><code>isinf(x)</code></td><td>True if &plusmn;infinity</td></tr>
+<tr><td><code>isnan(x)</code></td><td>True if NaN</td></tr>
+</table>
+
+<h2>2. Sums &amp; products</h2>
+<table>
+<tr><th>Function</th><th>What it does</th></tr>
+<tr><td><code>fsum(iterable)</code></td><td>Accurate float sum (no drift)</td></tr>
+<tr><td><code>prod(iterable, *, start=1)</code></td><td>Product of all items</td></tr>
+<tr><td><code>sumprod(p, q)</code></td><td>Dot product of two iterables (3.12+)</td></tr>
+<tr><td><code>dist(p, q)</code></td><td>Euclidean distance between two point sequences</td></tr>
+<tr><td><code>hypot(*coords)</code></td><td>Euclidean norm sqrt(x1**2 + x2**2 + ...)</td></tr>
+</table>
+
+<h2>3. Power &amp; logarithmic</h2>
+<table>
+<tr><th>Function</th><th>What it does</th></tr>
+<tr><td><code>pow(x, y)</code></td><td>x**y as float (differs from builtin pow)</td></tr>
+<tr><td><code>sqrt(x)</code></td><td>Square root</td></tr>
+<tr><td><code>cbrt(x)</code></td><td>Cube root (3.11+)</td></tr>
+<tr><td><code>exp(x)</code></td><td>e**x</td></tr>
+<tr><td><code>exp2(x)</code></td><td>2**x (3.11+)</td></tr>
+<tr><td><code>expm1(x)</code></td><td>e**x - 1, accurate for tiny x</td></tr>
+<tr><td><code>log(x[, base])</code></td><td>Natural log, or log to given base</td></tr>
+<tr><td><code>log2(x)</code></td><td>Base-2 log</td></tr>
+<tr><td><code>log10(x)</code></td><td>Base-10 log</td></tr>
+<tr><td><code>log1p(x)</code></td><td>log(1+x), accurate for tiny x</td></tr>
+</table>
+
+<h2>4. Trigonometric</h2>
+<table>
+<tr><th>Function</th><th>What it does</th></tr>
+<tr><td><code>sin(x)</code>, <code>cos(x)</code>, <code>tan(x)</code></td><td>Standard trig, x in radians</td></tr>
+<tr><td><code>asin(x)</code>, <code>acos(x)</code>, <code>atan(x)</code></td><td>Inverse trig, result in radians</td></tr>
+<tr><td><code>atan2(y, x)</code></td><td>Arc tangent of y/x, correct quadrant</td></tr>
+<tr><td><code>degrees(x)</code></td><td>Radians to degrees</td></tr>
+<tr><td><code>radians(x)</code></td><td>Degrees to radians</td></tr>
+</table>
+
+<h2>5. Hyperbolic</h2>
+<table>
+<tr><th>Function</th><th>What it does</th></tr>
+<tr><td><code>sinh(x)</code>, <code>cosh(x)</code>, <code>tanh(x)</code></td><td>Hyperbolic functions</td></tr>
+<tr><td><code>asinh(x)</code>, <code>acosh(x)</code>, <code>atanh(x)</code></td><td>Inverse hyperbolic</td></tr>
+</table>
+
+<h2>6. Special functions</h2>
+<table>
+<tr><th>Function</th><th>What it does</th></tr>
+<tr><td><code>erf(x)</code></td><td>Error function</td></tr>
+<tr><td><code>erfc(x)</code></td><td>Complementary error function 1-erf(x)</td></tr>
+<tr><td><code>gamma(x)</code></td><td>Gamma function</td></tr>
+<tr><td><code>lgamma(x)</code></td><td>Natural log of |gamma(x)|</td></tr>
+</table>
+
+<h2>Quick demo</h2>
+<pre><code>import math
+
+print(math.pi)                # 3.141592653589793
+print(math.sqrt(144))         # 12.0
+print(math.ceil(4.1))         # 5
+print(math.floor(4.9))        # 4
+print(math.factorial(5))      # 120
+print(math.gcd(12, 18))       # 6
+print(math.lcm(4, 6))         # 12
+print(math.pow(2, 10))        # 1024.0
+print(math.log(100, 10))      # 2.0
+print(math.degrees(math.pi))  # 180.0
+print(math.hypot(3, 4))       # 5.0
+print(math.dist([0,0], [3,4]))# 5.0
+print(math.isclose(0.1+0.2, 0.3))  # True
+print(math.comb(5, 2))        # 10
+print(math.perm(5, 2))        # 20
+print(math.trunc(-4.7))       # -4
+print(math.fsum([0.1]*10))    # 1.0  (sum() gives 0.9999999999999999)
+</code></pre>
+
+<h2>See everything yourself</h2>
+<pre><code>import math
+print(dir(math))
+help(math.hypot)
+</code></pre>
+
+<h2>Gotchas</h2>
+<ul>
+  <li><code>math.pow()</code> always returns float; builtin <code>pow()</code> keeps int and supports a 3rd modulus arg.</li>
+  <li>Trig takes <strong>radians</strong>, not degrees. Convert with <code>math.radians()</code>.</li>
+  <li><code>math.sqrt(-1)</code> raises <code>ValueError</code>. Use <code>cmath.sqrt(-1)</code> for complex.</li>
+  <li><code>math.nan != math.nan</code>. Test with <code>math.isnan()</code>.</li>
+  <li>For float lists, prefer <code>fsum()</code> over <code>sum()</code> when precision matters.</li>
+</ul>
+
+</body>
+</html>
