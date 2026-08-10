@@ -90,6 +90,20 @@ mindmap
       Answer / generate / review / RCA modes
       Cream chat UI
       VPS deploy pack
+    Ch 09 - MCP Basics
+      The N x M integration problem
+      Host - Client - Server
+      JSON-RPC 2.0 wire format
+      Tools - Resources - Prompts
+        Who triggers each one
+      Templated resource URIs
+      Elicitation and sampling
+      Capability negotiation
+        server/discover
+      stdio vs Streamable HTTP
+        Never write to stdout
+      Spec 2026-07-28 is stateless
+      Security and consent model
     Ch 10 - Build an MCP Server
       FastMCP over 5,000 test cases
       Tools - model invoked
@@ -299,6 +313,9 @@ mindmap
 │   ├── docker-compose.yml         qdrant + app + caddy — 24x7 VPS stack
 │   ├── deploy to VPS information.md   Step-by-step droplet runbook
 │   └── docs/                      architecture, phase 2 plan, JIRA MCP how-to
+│
+├── chapter_09_MCP_Basics/         MCP concepts — read before chapter 10
+│   └── MCP.md                     Protocol, roles, 3 primitives, transports, security
 │
 ├── chapter_10_MCP_Creation_VIBE/  Build your own MCP server (FastMCP)
 │   ├── Prompt.md                  The RISE-CEPT brief used to generate it
@@ -1075,6 +1092,54 @@ cp .env.example .env               # paste your GROQ_API_KEY
 **Deploy 24x7:** `docker-compose.yml` (Qdrant server + app + Caddy TLS/basic-auth) with the step-by-step runbook in **`deploy to VPS information.md`** — roughly **$55-75/month** total: an 8GB droplet plus ~$0.001 per question on Groq (embeddings, reranking, and the vector DB run locally and cost nothing).
 
 Full design rationale (embedding model, vector DB, chunk sizes, preprocessing — each with alternatives rejected) lives in `chapter_08_QABuddyAI/Plan.md`; Phase 2 (hourly auto-ingest, Figma, QABuddy MCP server for IDE copilots) is designed in `docs/phase2.md`.
+
+---
+
+## Chapter 09 — MCP Basics
+
+`chapter_09_MCP_Basics/MCP.md` is the concepts chapter that chapter 10 builds on. It answers *what MCP is and why it exists* before you write a line of server code — the protocol, the three roles, the three primitives, the two transports, and the security model, written against spec revision **`2026-07-28`**.
+
+**Concept:** MCP (Model Context Protocol) is an open protocol that standardises how an LLM application connects to an external data source or tool, using **JSON-RPC 2.0** over a **client-host-server** architecture. It takes explicit inspiration from the Language Server Protocol: LSP standardised "add language support to any editor", MCP standardises "add context and tools to any AI application".
+
+**Why:** Pasting your data into the chat window fails three ways — it burns the context window, it goes stale the moment someone edits the source, and it makes every AI client × every data source a bespoke integration. Write one MCP server and every client can use it: **N×M collapses to N+M**.
+
+**Q&A — the concepts that matter:**
+- **Q: Tool, resource, or prompt?** A: Ask who triggers it. **Tools** the *model* decides to call mid-conversation (they take arguments it computes). **Resources** the *app* fetches by URI, like a file read. **Prompts** the *user* picks from a menu, like a slash command.
+- **Q: Why can't a server just call the client?** A: Only two message directions exist — client sends requests/notifications, server sends responses/notifications. When a server needs something back (user input, an LLM completion), it answers with an `InputRequiredResult`, the client fetches it, and re-sends the original request with the input attached.
+- **Q: What's the gotcha that bites everyone?** A: **Never write to `stdout`** in a stdio server — `stdout` *is* the JSON-RPC channel, so one stray `print()` corrupts the stream and the client disconnects with a parse error. The spec explicitly permits `stderr` for logging; use it.
+
+**The three primitives, one question:**
+
+```mermaid
+flowchart LR
+    M["LLM decides<br/>mid-conversation"] -->|tools/call| S["MCP server"]
+    A["Client app fetches<br/>by URI"] -->|resources/read| S
+    U["User picks<br/>from a menu"] -->|prompts/get| S
+    S --> D[("Your data")]
+    S -.->|"InputRequiredResult"| A
+```
+
+**What a tool call actually looks like on the wire** — JSON-RPC 2.0, correlated by `id`:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 7,
+  "method": "tools/call",
+  "params": {
+    "name": "search_test_cases",
+    "arguments": { "query": "invite user", "limit": 3 }
+  }
+}
+```
+
+**Transports:** semantics are identical on both — a transport is only a *binding* that says how messages are framed. **stdio** (client launches the server as a subprocess; newline-delimited JSON-RPC over `stdin`/`stdout`) is what chapter 10 uses. **Streamable HTTP** (each message is an HTTP POST to one endpoint; the reply is JSON or a request-scoped SSE stream) is for remote and multi-user servers.
+
+**Era note worth knowing:** revision `2026-07-28` is **stateless** — every request carries its own protocol version and capabilities, and discovery happens via `server/discover`. Earlier revisions were session-based, opening with an `initialize` handshake. Both exist in the wild, and many SDKs (including the FastMCP version pinned in chapter 10) still implement the session-based model.
+
+**Security is an implementation obligation, not a protocol guarantee** — which makes it testable. The spec requires explicit user consent before exposing data or invoking any tool, and says tool descriptions from an untrusted server must themselves be treated as untrusted input. "Does the host actually ask before running this tool?" is a legitimate test case.
+
+The chapter closes with a glossary and a common-failure-modes table (silent stdout corruption, a tool the model never calls, templated resources the client has to guess at, era mismatches).
 
 ---
 
@@ -2002,6 +2067,7 @@ You can read it linearly (chapter 01 → 07) or jump straight to a project:
 - **"I want hybrid retrieval + reranking on a real 5,000-row corpus."** → `chapter_07_RAG/Advance_RAG/`.
 - **"I want one cited answer across my whole QA knowledge base."** → `chapter_08_QABuddyAI/` (QA Buddy chat UI).
 - **"I want to deploy an internal QA RAG to a VPS, 24x7."** → `chapter_08_QABuddyAI/deploy to VPS information.md`.
+- **"What even is MCP, and what's the difference between a tool, a resource, and a prompt?"** → `chapter_09_MCP_Basics/MCP.md` — read this before chapter 10.
 - **"I want to build my own MCP server and plug my data into Claude."** → `chapter_10_MCP_Creation_VIBE/testcase-creator-mcp/`.
 - **"I never understood MCP tools vs resources vs prompts."** → same folder — all three primitives sit in one file over one CSV.
 - **"I'm a manual tester and I don't know Python yet."** → `chapter_11_Python_Learning/` — start at `ex_01_Python_Basics/Lab001_Hello.py`.
@@ -2036,6 +2102,7 @@ You can read it linearly (chapter 01 → 07) or jump straight to a project:
 - For Chapter 7 RAG Explorer: **Node.js 20+**, **Ollama** with `nomic-embed-text` pulled, **ChromaDB** (`pip install chromadb`), and a **Groq API key**.
 - For Chapter 7 Advanced RAG: **Python 3.10+** and `pip install -r requirements.txt` (Flask, qdrant-client, FlagEmbedding/torch, pandas), plus a **Groq API key**. Models download on first use.
 - For Chapter 8 QABuddy.ai: **Python 3.11+** (`uv` recommended) and `requirements.txt` (Flask, qdrant-client, FlagEmbedding/torch, transformers, pymupdf, pandas), a **Groq API key**; **Docker + docker-compose** only for the VPS deployment. bge-m3 + reranker (~4.6GB) download on first ingest.
+- For Chapter 9 MCP Basics: nothing to install — it is a reading chapter. **Node.js** only if you want to follow along with the MCP Inspector (`npx @modelcontextprotocol/inspector`).
 - For Chapter 10 MCP server: **Python 3.11+** and **uv**; `uv sync` pulls the pinned `fastmcp==3.4.4`. **Node.js** only if you want the MCP Inspector (`npx @modelcontextprotocol/inspector`). No API key needed — the server is local and read-only.
 - For Chapter 11 Python labs: **Python 3.11+**. All labs are stdlib-only except `ex_18_OOPs_Python/04_Encapsulation/132_Ecap_NICE.py`, which needs `python-dotenv` plus local `USERNAME` and `PASSWORD` environment values. No real credentials are committed.
 - For Job Tracker AI: **Node.js 20.19+ or 22.12+** and npm for Vite 8.
