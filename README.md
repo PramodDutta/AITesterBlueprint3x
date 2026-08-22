@@ -113,7 +113,7 @@ mindmap
       stdio JSON-RPC transport
       MCP Inspector + Claude Desktop
     Ch 11 - Python for Testers
-      131 runnable labs
+      173 Python files
       ex_01 - print + comments
       ex_02 - keywords + identifiers + variables
         Identifier rules cheat sheet
@@ -179,6 +179,14 @@ mindmap
         Encapsulation + access conventions
         5 inheritance patterns + MRO
         QA BaseTest examples
+        Polymorphism + method overriding
+        Abstract base classes
+        Static methods + class methods
+        Exceptions + custom errors
+        Standard-library modules
+      ex_19 - packages
+        Local modules + imports
+        __init__.py package marker
     E2E AI QA Pipeline (blueprint)
       Jira JQL to test plan
       RAG test cases
@@ -326,7 +334,7 @@ mindmap
 │       ├── pyproject.toml         Pinned fastmcp==3.4.4
 │       └── README.md              Install / run / Inspector / Claude Desktop
 │
-├── chapter_11_Python_Learning/    Python fundamentals for testers (131 labs)
+├── chapter_11_Python_Learning/    Python fundamentals for testers (173 Python files)
 │   ├── ex_01_Python_Basics/
 │   │   ├── Lab001_Hello.py            print() with many arguments
 │   │   ├── Lab002_Comment.py          Single-line comments
@@ -411,12 +419,61 @@ mindmap
 │   │   ├── 112..115                   Dictionary CRUD + nested test data
 │   │   ├── 116_Dict_Imp.py            zip(), merge operator, get()
 │   │   └── 117..119                   Equality + character/vowel counting
-│   └── ex_18_OOPs_Python/
-│       ├── 01_Class_Object/          Person + Dog classes, methods, self
-│       ├── 02_Constructor/           __init__, required args, user input, calculator
-│       ├── 03_Instance_Variable/     Global, class, instance, and local scope
-│       ├── 04_Encapsulation/         Public, protected, private + env login
-│       └── 05_Inheritance/           Single, multiple, multilevel, hierarchical, hybrid
+│   ├── ex_18_OOPs_Python/
+│   │   ├── 01_Class_Object/          Person + Dog classes, methods, self
+│   │   ├── 02_Constructor/           __init__, required args, user input, calculator
+│   │   ├── 03_Instance_Variable/     Global, class, instance, and local scope
+│   │   ├── 04_Encapsulation/         Public, protected, private + env login
+│   │   ├── 05_Inheritance/           Single, multiple, multilevel, hierarchical, hybrid
+│   │   ├── 06_Polymorphism/
+│   │   │   ├── MethodOverloading/
+│   │   │   │   ├── 137_MO.py         Same method name: the later definition wins
+│   │   │   │   ├── 138_MO_ALL.py     Default argument as an overload alternative
+│   │   │   │   ├── 139_MO.py         Optional third argument for int/float addition
+│   │   │   │   └── 140_IQ.py         Optional authentication argument
+│   │   │   └── MethodOverrding/
+│   │   │       ├── 141_MOR.py        Child class overrides run()
+│   │   │       └── 142_MO.py         Login/API test run() overrides
+│   │   ├── 07_Abstraction/
+│   │   │   ├── 143_Abs.py            ABC Animal with abstract sound()
+│   │   │   ├── 144_Abs.py            Abstract loan contract
+│   │   │   ├── 145_REAL_.py          Browser manager start/stop contract
+│   │   │   ├── 146_REAL2.py          Engine + gearbox abstractions
+│   │   │   └── 147_REAL_Browser.py   Browser + Excel reader test flow
+│   │   ├── 08_Static/
+│   │   │   ├── 148_Static.py         Shared class counter
+│   │   │   ├── 149.py                Static greeting utility
+│   │   │   ├── 150.py                Static sum utility
+│   │   │   ├── 151_Non_Static.py     Instance method vs static method
+│   │   │   ├── 152_REAL_Exmaple.py   Static Excel/MySQL helpers in tests
+│   │   │   └── 154_Ex.py             Class, static, and instance members
+│   │   ├── 09_Exceptions/
+│   │   │   ├── 153_Ex.py             NameError example
+│   │   │   ├── 154.py                ZeroDivisionError example
+│   │   │   ├── 155.py                TypeError example
+│   │   │   ├── 156.py                ValueError example
+│   │   │   ├── 157.py                IndexError example
+│   │   │   ├── 158.py                SyntaxError example
+│   │   │   ├── 159.py                Unhandled input/division errors
+│   │   │   ├── 160.py                Catch ZeroDivisionError
+│   │   │   ├── 161.py                Catch a tuple of exception types
+│   │   │   ├── 162.py                Separate exception handlers
+│   │   │   ├── 163.py                try/except/finally
+│   │   │   ├── 164.py                requests connection + timeout errors
+│   │   │   ├── 165.py                try/except/else/finally
+│   │   │   ├── 166.py                Raise an authorization exception
+│   │   │   ├── 167.py                Custom InvalidAgeException
+│   │   │   ├── 168.py                FileNotFoundError handling
+│   │   │   └── 169.py                Python 3.11 ExceptionGroup
+│   │   └── 10_Modules/
+│   │       └── 170.py                os module and environment access
+│   └── ex_19_Package/
+│       ├── 170.py                     Import local modules and a package
+│       ├── mymodule.py                Greeting module
+│       └── package/
+│           ├── __init__.py            Package marker
+│           ├── util_module.py         First package utility
+│           └── util_module2.py        Second package utility
 │
 ├── E2E_QA_Pipeline/               End-to-end AI QA pipeline blueprint
 │   └── E2E_QA_Pipeline.md         8-step flow: Jira -> plan -> cases -> automation -> run -> RCA
@@ -1226,15 +1283,15 @@ claude mcp add vwo-testcases -- uv run --directory "$(pwd)" python server.py
 
 ## Chapter 11 — Python for Testers
 
-`chapter_11_Python_Learning/` is the ground floor. Every automation framework, RAG script, and MCP server in this repo is Python — this chapter is 131 tiny runnable labs that get a manual tester from `print("Hello")` to decorators, collections, and object-oriented programming without a framework in the way.
+`chapter_11_Python_Learning/` is the ground floor. Its 173 Python source files take a manual tester from `print("Hello")` to decorators, collections, object-oriented programming, exception handling, modules, and packages without a framework in the way.
 
-**Concept:** Eighteen focused exercise folders build the language one idea at a time. The path starts with output, variables, types, operators, conditions, loops, and functions; then moves through scope, decorators, conversion, lambdas, and Python's core collections. The final folders cover sets and `frozenset`, functional transformations with `map()` / `filter()`, dictionaries for realistic nested test data, and OOP from first class through constructor, encapsulation, and five inheritance patterns. Each file stays small enough to run, inspect, change, and re-run in a few minutes.
+**Concept:** Nineteen focused exercise folders build the language one idea at a time. The path starts with output, variables, types, operators, conditions, loops, and functions; then moves through scope, decorators, conversion, lambdas, and Python's core collections. The final folders cover sets and `frozenset`, functional transformations with `map()` / `filter()`, dictionaries for realistic nested test data, OOP, polymorphism, abstraction, static and class methods, exceptions, modules, and packages. Each file stays small enough to run, inspect, change, and re-run in a few minutes.
 
 **Why:** Most "learn Python" material teaches a language. A tester needs a *runnable mental model* fast — why `"PRAMOD" + 10` throws, why `age` and `Age` are two variables, why `input()` always hands back a string. Each lab is small enough to run, break, and re-run in under a minute.
 
 **Q&A — how to work through it:**
-- **Q: In what order do I run these?** A: Follow the exercise folders from `ex_01` to `ex_18`, and the numbered examples from `001` through `136`. Some numbers are absent or reused in separate OOP topic folders, so follow the folder order first and filenames second.
-- **Q: Do I need a virtualenv or any install?** A: Almost every lab is stdlib-only. `04_Encapsulation/132_Ecap_NICE.py` additionally uses `python-dotenv`; install it with `python3 -m pip install python-dotenv` and provide `USERNAME` / `PASSWORD` in your environment or a local ignored `.env` file.
+- **Q: In what order do I run these?** A: Follow the exercise folders from `ex_01` to `ex_19`, and the numbered examples from `001` through `170`. Some numbers are absent or reused in separate OOP topic folders, so follow the folder order first and filenames second. The package exercise also uses supporting files without numeric prefixes.
+- **Q: Do I need a virtualenv or any install?** A: Almost every lab is stdlib-only. `04_Encapsulation/132_Ecap_NICE.py` uses `python-dotenv`, while `09_Exceptions/164.py` uses `requests`; install both with `python3 -m pip install python-dotenv requests`. Provide `USERNAME` / `PASSWORD` in your environment or a local ignored `.env` file for the encapsulation example.
 - **Q: What's the single most common beginner error here?** A: `TypeError: can only concatenate str (not "int") to str` — Lab013 triggers it deliberately and Lab015 fixes it with `str()`. The same class of bug shows up later as `int(input(...))` in Lab022.
 
 **Learning path:**
@@ -1272,11 +1329,16 @@ flowchart TD
     Q --> Q1["select with filter&#40;&#41;<br/>transform with map&#40;&#41;<br/>functions + lambdas"]
     Q1 --> R["ex_17 — Dictionary<br/>Lab112-119"]
     R --> R1["key-value CRUD<br/>nested test data<br/>zip / merge / frequency count"]
-    R1 --> S["ex_18 — OOP<br/>Lab120-136"]
+    R1 --> S["ex_18 — OOP and errors<br/>120-170"]
     S --> S1["class + object + self<br/>constructors<br/>class vs instance variables"]
     S1 --> S2["encapsulation<br/>public / protected / private<br/>env-backed credentials"]
     S2 --> S3["single / multiple / multilevel<br/>hierarchical / hybrid inheritance<br/>MRO + BaseTest patterns"]
-    S3 --> D["Ready for Chapters 07-10<br/>RAG scripts, Flask apps, MCP servers"]
+    S3 --> S4["polymorphism<br/>default-argument overload pattern<br/>method overriding"]
+    S4 --> S5["abstract base classes<br/>static + class methods"]
+    S5 --> S6["built-in + custom exceptions<br/>try / except / else / finally<br/>ExceptionGroup"]
+    S6 --> S7["ex_18 modules<br/>os + environment"]
+    S7 --> T["ex_19 — Packages<br/>local imports + __init__.py"]
+    T --> D["Ready for Chapters 07-10<br/>RAG scripts, Flask apps, MCP servers"]
 ```
 
 **The lab that teaches the most in four lines** — `ex_03_Literals/Lab023_Strings.py`:
@@ -1904,9 +1966,9 @@ for char in "automation":
 
 ### ex_18 — Object-Oriented Python
 
-**Concept:** A class is a blueprint that groups data (attributes) and behaviour (methods). Calling the class creates an object; `__init__` initializes it, and each method receives that object as its first `self` parameter. The OOP path progresses from classes and constructors through variable scope and encapsulation, then applies single, multiple, multilevel, hierarchical, and hybrid inheritance to QA-style base tests.
+**Concept:** A class is a blueprint that groups data (attributes) and behaviour (methods). Calling the class creates an object; `__init__` initializes it, and each method receives that object as its first `self` parameter. The OOP path progresses from classes and constructors through variable scope, encapsulation, inheritance, polymorphism, abstraction, static/class methods, exception handling, and standard-library modules.
 
-**Why:** Page objects, API clients, test-data models, and framework fixtures are all built from classes. Understanding how `self` connects a method to one specific object is the first step toward reading and designing maintainable automation code.
+**Why:** Page objects, API clients, test-data models, and framework fixtures are all built from classes. Polymorphism lets test subclasses customize shared behavior, abstraction defines contracts they must satisfy, and exception handling turns predictable failures into controlled test outcomes.
 
 **Q&A — why use this?**
 - **Q: Class or object?** A: `Dog` is the class blueprint; `chow = Dog()` creates an object and stores its reference in `chow`.
@@ -1915,6 +1977,10 @@ for char in "automation":
 - **Q: Class variable or instance variable?** A: A value defined on the class is shared as a default. Assigning through `self.name` or `object.name` creates or updates a value for that specific object.
 - **Q: Are `protected` and `private` enforced?** A: A single underscore (`_config`) is a developer convention. A double-leading underscore (`__account_number`) triggers name mangling, which prevents casual access but is not a security boundary.
 - **Q: Which parent wins in multiple inheritance?** A: Python follows its method resolution order (MRO). In `class Child(Father1, Father2)`, `self.money()` finds `Father1.money()` first.
+- **Q: Does Python support traditional method overloading?** A: No. If a class defines the same method name twice, the later definition replaces the earlier one. The labs use default arguments such as `c=10` or `auth=None` when one method needs to accept different call shapes.
+- **Q: What is method overriding?** A: A child class supplies its own implementation of a method inherited from its parent. `LoginTest.run()` and `APITest.run()` replace `BaseTest.run()` for those objects.
+- **Q: Why use an abstract base class?** A: An `ABC` with `@abstractmethod` defines the operations every concrete subclass must implement, such as starting a browser or reading test data.
+- **Q: Static method or instance method?** A: Use an instance method when behavior needs object state through `self`; use `@staticmethod` for a utility that only needs its explicit arguments. Use `@classmethod` when the method needs shared class state through `cls`.
 
 | Folder | Focus | QA connection |
 |:-------|:------|:--------------|
@@ -1923,6 +1989,11 @@ for char in "automation":
 | `03_Instance_Variable` | Global, class/instance, and local names | Avoid shared-state bugs |
 | `04_Encapsulation` | Public/protected/private conventions, authenticated access | Credentials and controlled state |
 | `05_Inheritance` | Five inheritance shapes, MRO, reusable `BaseTest` | Shared setup across test classes |
+| `06_Polymorphism` | Same-name method behavior, default arguments, overriding | Flexible test implementations |
+| `07_Abstraction` | `ABC`, `@abstractmethod`, browser/data-reader contracts | Enforced framework interfaces |
+| `08_Static` | Class attributes, instance methods, `@staticmethod`, `@classmethod` | Shared counters and stateless utilities |
+| `09_Exceptions` | Built-in errors, handlers, `else`, `finally`, custom errors, `ExceptionGroup` | Predictable failure handling and cleanup |
+| `10_Modules` | `os` name, working directory, files, and environment | Runtime and environment inspection |
 
 ```python
 class Dog:
@@ -1960,6 +2031,19 @@ LoginTest("chrome").run_test()
 
 ---
 
+### ex_19 — Packages and Imports
+
+**Concept:** A module is one `.py` file; a package is a directory of modules, conventionally marked by `__init__.py`. The package exercise imports `mymodule.py` directly and imports `util_module` / `util_module2` through the local `package` directory.
+
+**Why:** Real test frameworks split page objects, API clients, fixtures, and utilities into importable modules instead of keeping the whole suite in one script. This exercise shows the smallest working version of that structure.
+
+**Q&A — modules vs packages:**
+- **Q: What does `__init__.py` do here?** A: It marks `package/` as a regular Python package and gives the package a place for initialization or exported names later.
+- **Q: Why run `170.py` from `ex_19_Package/`?** A: Python places the script's directory on the import path, so both `import mymodule` and `from package import util_module` resolve locally.
+- **Q: Do `util_module.py` and `util_module2.py` conflict?** A: No. They are separate module namespaces, even though both currently expose a function named `blah()`.
+
+---
+
 **Run any lab:**
 ```bash
 cd chapter_11_Python_Learning/ex_01_Python_Basics
@@ -1987,6 +2071,19 @@ python3 122_Clas_DOG.py
 cd ../02_Constructor && python3 123.py
 cd ../04_Encapsulation && python3 136_PPP.py
 cd ../05_Inheritance && python3 136_REAL.py
+
+# polymorphism, abstraction, and static methods
+cd ../06_Polymorphism/MethodOverloading && python3 139_MO.py
+cd ../MethodOverrding && python3 141_MOR.py
+cd ../../07_Abstraction && python3 147_REAL_Browser.py
+cd ../08_Static && python3 151_Non_Static.py
+
+# handled exceptions and standard-library modules
+cd ../09_Exceptions && python3 166.py
+cd ../10_Modules && python3 170.py
+
+# local modules and packages
+cd ../../ex_19_Package && python3 170.py
 ```
 
 ---
@@ -2085,6 +2182,10 @@ You can read it linearly (chapter 01 → 07) or jump straight to a project:
 - **"How do I keep or transform selected test results?"** → `chapter_11_Python_Learning/ex_16_MAP_Filters/` — `filter()` and `map()` with functions and lambdas.
 - **"How do I model an API response or nested test record?"** → `chapter_11_Python_Learning/ex_17_Dict/` — dictionary CRUD, nesting, merge, and frequency-count exercises.
 - **"How do Python classes, constructors, encapsulation, and inheritance work?"** → `chapter_11_Python_Learning/ex_18_OOPs_Python/` — start with `01_Class_Object/`, then follow the numbered topic folders.
+- **"Does Python support method overloading and overriding?"** → `chapter_11_Python_Learning/ex_18_OOPs_Python/06_Polymorphism/` — compare the default-argument pattern with child-class overrides.
+- **"How do I define an abstract browser or test contract?"** → `chapter_11_Python_Learning/ex_18_OOPs_Python/07_Abstraction/` — `ABC` and `@abstractmethod` examples.
+- **"How do I handle Python errors without stopping my test?"** → `chapter_11_Python_Learning/ex_18_OOPs_Python/09_Exceptions/` — built-in errors through custom exceptions and `ExceptionGroup`.
+- **"How do Python modules and packages work?"** → `chapter_11_Python_Learning/ex_18_OOPs_Python/10_Modules/` and `chapter_11_Python_Learning/ex_19_Package/` — standard-library access, local imports, and `__init__.py`.
 - **"I want LangFlow up without remembering the docker run flags."** → `chapter_05_AI_Agents_LangFlow/langflow-up.sh` (and `langflow-down.sh` to stop).
 - **"I want the big picture — Jira story to executed automation."** → `E2E_QA_Pipeline/E2E_QA_Pipeline.md`.
 - **"I want to track job applications locally."** → `Project_Job_TRACKERAI/`.
@@ -2104,7 +2205,7 @@ You can read it linearly (chapter 01 → 07) or jump straight to a project:
 - For Chapter 8 QABuddy.ai: **Python 3.11+** (`uv` recommended) and `requirements.txt` (Flask, qdrant-client, FlagEmbedding/torch, transformers, pymupdf, pandas), a **Groq API key**; **Docker + docker-compose** only for the VPS deployment. bge-m3 + reranker (~4.6GB) download on first ingest.
 - For Chapter 9 MCP Basics: nothing to install — it is a reading chapter. **Node.js** only if you want to follow along with the MCP Inspector (`npx @modelcontextprotocol/inspector`).
 - For Chapter 10 MCP server: **Python 3.11+** and **uv**; `uv sync` pulls the pinned `fastmcp==3.4.4`. **Node.js** only if you want the MCP Inspector (`npx @modelcontextprotocol/inspector`). No API key needed — the server is local and read-only.
-- For Chapter 11 Python labs: **Python 3.11+**. All labs are stdlib-only except `ex_18_OOPs_Python/04_Encapsulation/132_Ecap_NICE.py`, which needs `python-dotenv` plus local `USERNAME` and `PASSWORD` environment values. No real credentials are committed.
+- For Chapter 11 Python labs: **Python 3.11+**. Most labs are stdlib-only. `ex_18_OOPs_Python/04_Encapsulation/132_Ecap_NICE.py` needs `python-dotenv` plus local `USERNAME` and `PASSWORD` environment values; `ex_18_OOPs_Python/09_Exceptions/164.py` needs `requests`. Install both with `python3 -m pip install python-dotenv requests`. No real credentials are committed.
 - For Job Tracker AI: **Node.js 20.19+ or 22.12+** and npm for Vite 8.
 
 ## Chapter History
