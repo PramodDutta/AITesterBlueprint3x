@@ -113,7 +113,7 @@ mindmap
       stdio JSON-RPC transport
       MCP Inspector + Claude Desktop
     Ch 11 - Python for Testers
-      173 Python files
+      185 Python files
       ex_01 - print + comments
       ex_02 - keywords + identifiers + variables
         Identifier rules cheat sheet
@@ -187,6 +187,20 @@ mindmap
       ex_19 - packages
         Local modules + imports
         __init__.py package marker
+      ex_20 - collections + file I/O
+        namedtuple + Counter + defaultdict
+        os.path absolute-path fixes
+        python-dotenv secrets
+        CSV login data + pandas
+      ex_21 - pytest basics
+        assert + @pytest.mark smoke/regression
+        -k keyword vs -m marker filtering
+        Fixtures + parametrize cheat sheet
+    Ch 12 - CrewAI Test Analyst Agent
+      Agent role + goal + backstory
+      Groq LLM via OpenAI-compatible URL
+      Task + Crew + kickoff
+      Requirement to 5-10 P0 test cases
     E2E AI QA Pipeline (blueprint)
       Jira JQL to test plan
       RAG test cases
@@ -334,7 +348,7 @@ mindmap
 │       ├── pyproject.toml         Pinned fastmcp==3.4.4
 │       └── README.md              Install / run / Inspector / Claude Desktop
 │
-├── chapter_11_Python_Learning/    Python fundamentals for testers (173 Python files)
+├── chapter_11_Python_Learning/    Python fundamentals for testers (185 Python files)
 │   ├── ex_01_Python_Basics/
 │   │   ├── Lab001_Hello.py            print() with many arguments
 │   │   ├── Lab002_Comment.py          Single-line comments
@@ -467,13 +481,35 @@ mindmap
 │   │   │   └── 169.py                Python 3.11 ExceptionGroup
 │   │   └── 10_Modules/
 │   │       └── 170.py                os module and environment access
-│   └── ex_19_Package/
+│   ├── ex_19_Package/
 │       ├── 170.py                     Import local modules and a package
 │       ├── mymodule.py                Greeting module
 │       └── package/
 │           ├── __init__.py            Package marker
 │           ├── util_module.py         First package utility
 │           └── util_module2.py        Second package utility
+│   ├── ex_20_Collections_FileIO/
+│   │   ├── 171.py                     collections: namedtuple, Counter, defaultdict
+│   │   ├── 172_Main.py                if __name__ == '__main__' guard
+│   │   ├── 173_Usage.py               Local functions dispatched under __main__
+│   │   ├── 174_OS.py                  os.getcwd() + os.path.join path fixes
+│   │   ├── 175_File.py                open() with os.path.join absolute paths
+│   │   ├── 176_Env.py                 python-dotenv secrets (DB_PASSWORD gate)
+│   │   ├── 177.py                     with open() + FileNotFoundError handling
+│   │   ├── 178.py                     csv.reader over login test data
+│   │   ├── 179.py                     pandas read_csv DataFrame
+│   │   ├── testdata.txt               Sample user CSV (20 rows, some empty cells)
+│   │   ├── td.csv                     Login test data (username, password, expected)
+│   │   └── pramod.txt                 Small text file for the read labs
+│   └── ex_21_PyTest/
+│       ├── 179.py                     ER == AR testing mindset note
+│       ├── test_180.py                @pytest.mark.reg + smoke asserts
+│       ├── test_181.py                @pytest.mark.smoke + regression tests
+│       └── PyTest_Cheatsheet.md       Full pytest reference (markers, fixtures, parametrize)
+│
+├── chapter_12_CrewAI/             CrewAI multi-agent framework labs
+│   ├── 01_test_analyst_Agent.py   QA Analyst agent: requirement -> P0 test cases
+│   └── .env                       Groq key + model id (gitignored)
 │
 ├── E2E_QA_Pipeline/               End-to-end AI QA pipeline blueprint
 │   └── E2E_QA_Pipeline.md         8-step flow: Jira -> plan -> cases -> automation -> run -> RCA
@@ -2044,6 +2080,90 @@ LoginTest("chrome").run_test()
 
 ---
 
+### ex_20 — Collections + File I/O
+
+**Concept:** This lab upgrades the built-in containers with `collections` (`namedtuple`, `Counter`, `defaultdict`) and adds the second half of QA scripting: reading files, resolving paths with `os.path`, loading secrets with `python-dotenv`, and parsing CSV test data, both with the stdlib `csv` module and pandas.
+
+**Why:** Real test data does not live in a hardcoded list. It lives in a `.csv` export, a `.env` config, or a text fixture. This lab shows the exact mechanics of getting data into and out of a test script without hardcoding secrets.
+
+**Q&A — containers and files:**
+- **Q: Why use `namedtuple` over a dict?** A: Attribute access (`t.name`) reads better than `t["name"]`, and the object is immutable, so test fixtures cannot be accidentally mutated mid-run.
+- **Q: What does `defaultdict` fix?** A: Missing-key handling. `defaultdict(int)` returns 0 and `defaultdict(list)` returns [] instead of raising KeyError, which removes whole classes of counting and grouping bugs.
+- **Q: Why does `open('testdata.txt')` fail from some directories?** A: Relative paths resolve against the current working directory, not the script location. Build absolute paths with `os.path.join(os.path.dirname(os.path.abspath(__file__)), name)` so the lab works from anywhere.
+
+**Mental model — from file on disk to assertion-ready data:**
+
+```mermaid
+flowchart LR
+    ENV[.env secrets] --> DOT[python-dotenv]
+    DOT --> OS[os.getenv]
+    CSV[td.csv / testdata.txt] --> OPEN[open / csv.reader / pandas]
+    PATH[os.path.join<br/>absolute paths] --> OPEN
+    OPEN --> DATA[lists / rows / DataFrame]
+    DATA --> TEST[assert or login check]
+    OS --> TEST
+```
+
+**Code sample — CSV login data into a pandas DataFrame:**
+
+```python
+import pandas as pd
+import os
+
+base_dir = os.path.dirname(os.path.abspath(__file__))
+df = pd.read_csv(os.path.join(base_dir, 'td.csv'))
+print(df)
+```
+
+`178.py` does the same with the stdlib `csv.reader`, printing each `username|password` row. `176_Env.py` loads `DB_PASSWORD` from `.env` and gates an admin check on it. Empty CSV cells become `NaN` in pandas and empty strings in `csv.reader`, and the shipped data includes both on purpose.
+
+---
+
+### ex_21 — pytest Basics
+
+**Concept:** pytest is the default Python test runner: functions named `test_*` are collected automatically, plain `assert` checks the outcome, and `@pytest.mark.*` tags split suites into groups you can run selectively. The lab adds two marker-based test files plus a full cheat sheet.
+
+**Why:** Manual `print()`-based checking does not scale past one script. pytest gives you collection, pass/fail reporting, marker filtering, fixtures, and parametrize, all with zero boilerplate. This is the same machinery production test suites use, and the prerequisite for the framework chapters later in the course.
+
+**Q&A — first steps with pytest:**
+- **Q: What is the difference between `-k` and `-m`?** A: `-k "smoke"` matches by keyword, a substring of the test name or marker id; `-m smoke` matches by marker exactly. Use `-m` for marker discipline, `-k` for quick fuzzy filtering.
+- **Q: Why does my test file get ignored?** A: pytest only collects files named `test_*.py` or `*_test.py` and functions named `test_*`. Rename the function or file and it appears immediately.
+- **Q: Why register markers in pytest.ini?** A: Custom markers like `smoke` and `regression` should be registered there, otherwise pytest runs fine but warns on every invocation. It is also where default options like `-v` live.
+
+**Mental model — how one pytest run flows:**
+
+```mermaid
+flowchart TD
+    CLI[pytest command] --> COLL[Collect test_*.py files]
+    COLL --> FILT{Filter -k / -m}
+    FILT --> RUN[Run each test function]
+    RUN --> ASSERT{assert passes?}
+    ASSERT -->|yes| PASS[PASSED]
+    ASSERT -->|no| FAIL[FAILED + diff]
+    FAIL --> REPORT[Summary: N passed, M failed]
+    PASS --> REPORT
+```
+
+**Code sample — marker-based tests from the lab:**
+
+```python
+import pytest
+
+@pytest.mark.smoke
+def test_method2():
+    print("test1")
+    assert 1 - 1 == 2        # deliberately fails
+
+@pytest.mark.regression
+def test_login():
+    print("test2")
+    assert 1 + 1 == 2        # passes
+```
+
+Run selectively: `pytest -m smoke`, `pytest -m "not smoke"`, or `pytest -k login`. `PyTest_Cheatsheet.md` in the same folder is the full reference: fixtures, scopes, parametrize, conftest.py, and plugins.
+
+---
+
 **Run any lab:**
 ```bash
 cd chapter_11_Python_Learning/ex_01_Python_Basics
@@ -2084,7 +2204,78 @@ cd ../10_Modules && python3 170.py
 
 # local modules and packages
 cd ../../ex_19_Package && python3 170.py
+
+# collections + file I/O
+cd ../ex_20_Collections_FileIO && python3 171.py
+python3 176_Env.py
+python3 178.py
+python3 179.py
+
+# pytest basics
+cd ../ex_21_PyTest && python3 -m pytest test_180.py test_181.py -v
 ```
+
+---
+
+## Chapter 12 — CrewAI Test Analyst Agent
+
+**Concept:** CrewAI is a Python framework for multi-agent automation: you define Agents (role + goal + backstory), hand them Tasks, group both into a Crew, and call `kickoff()`. The lab builds a Test Analyst agent, a senior QA persona that reads a feature requirement and proposes 5-10 P0 test cases, powered by a free Groq LLM.
+
+**Why:** This is the bridge from prompting (chapter 02) to autonomous agents (chapters 04-05). Instead of copy-pasting a prompt every time, you encode the persona and instructions once as code, and reuse the agent on any requirement, including from a pipeline.
+
+**Q&A — agent anatomy:**
+- **Q: What is the difference between Agent and Task?** A: The Agent is the who (persona, skills, LLM). The Task is the what (a single unit of work). One agent can execute many tasks; one task belongs to one agent.
+- **Q: Why pass a Groq model explicitly?** A: CrewAI defaults to OpenAI when no LLM is given. Groq's free tier works through its OpenAI-compatible endpoint, so you wire `base_url=https://api.groq.com/openai/v1` plus the full model id `openai/gpt-oss-120b` from your Groq console.
+- **Q: Where do the API keys live?** A: In `chapter_12_CrewAI/.env`, loaded by python-dotenv. The repo's `.gitignore` excludes `.env`, so keys never get committed.
+
+**Mental model — from requirement to test cases:**
+
+```mermaid
+flowchart LR
+    ENV[.env<br/>GROQ_API_KEY + model] --> LLM[Groq LLM]
+    LLM --> AG[QA Analyst Agent<br/>role + goal + backstory]
+    REQ[Feature requirement] --> TASK[Test case Task]
+    AG --> TASK
+    TASK --> CREW[Crew]
+    CREW -->|kickoff| OUT[5-10 P0 test cases]
+```
+
+**Code sample — the full agent:**
+
+```python
+from crewai import Agent, Task, Crew, LLM
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+groq_llm = LLM(
+    model=f"openai/{os.getenv('GROQ_MODEL')}",
+    api_key=os.getenv("GROQ_API_KEY"),
+    base_url=os.getenv("GROQ_BASE_URL"),
+)
+
+qa_agent = Agent(
+    role="QA Engineer",
+    goal="Analyse the feature or the requirements, and create 5-10 test cases out of it.",
+    backstory="You are a senior QA engineer with 15 years of experience in test planning and testcase creation",
+    llm=groq_llm,
+    verbose=True,
+)
+
+test_case_task = Task(
+    description="Create 5-10 test cases",
+    expected_output="A numbered list of 5-10 test cases with brief descriptions for a app.vwo.com Login page with the username, password and submit button with remember me functionality",
+    agent=qa_agent,
+)
+
+crew = Crew(agents=[qa_agent], tasks=[test_case_task], verbose=True)
+
+if __name__ == "__main__":
+    result = crew.kickoff()
+    print(result)
+```
+
+Run it with the same interpreter that has crewai installed: `python chapter_12_CrewAI/01_test_analyst_Agent.py`. The agent returns numbered test cases covering valid login, empty fields, password masking, remember-me persistence, injection protection, and accessibility.
 
 ---
 
@@ -2186,6 +2377,9 @@ You can read it linearly (chapter 01 → 07) or jump straight to a project:
 - **"How do I define an abstract browser or test contract?"** → `chapter_11_Python_Learning/ex_18_OOPs_Python/07_Abstraction/` — `ABC` and `@abstractmethod` examples.
 - **"How do I handle Python errors without stopping my test?"** → `chapter_11_Python_Learning/ex_18_OOPs_Python/09_Exceptions/` — built-in errors through custom exceptions and `ExceptionGroup`.
 - **"How do Python modules and packages work?"** → `chapter_11_Python_Learning/ex_18_OOPs_Python/10_Modules/` and `chapter_11_Python_Learning/ex_19_Package/` — standard-library access, local imports, and `__init__.py`.
+- **"How do I read files, load .env secrets, and parse CSV test data in Python?"** → `chapter_11_Python_Learning/ex_20_Collections_FileIO/` — os.path fixes, python-dotenv, csv + pandas.
+- **"How do I write my first pytest tests?"** → `chapter_11_Python_Learning/ex_21_PyTest/` — start with `test_180.py`, then read `PyTest_Cheatsheet.md`.
+- **"I want an AI agent that writes P0 test cases from a requirement."** → `chapter_12_CrewAI/01_test_analyst_Agent.py` — CrewAI agent on Groq.
 - **"I want LangFlow up without remembering the docker run flags."** → `chapter_05_AI_Agents_LangFlow/langflow-up.sh` (and `langflow-down.sh` to stop).
 - **"I want the big picture — Jira story to executed automation."** → `E2E_QA_Pipeline/E2E_QA_Pipeline.md`.
 - **"I want to track job applications locally."** → `Project_Job_TRACKERAI/`.
@@ -2206,6 +2400,9 @@ You can read it linearly (chapter 01 → 07) or jump straight to a project:
 - For Chapter 9 MCP Basics: nothing to install — it is a reading chapter. **Node.js** only if you want to follow along with the MCP Inspector (`npx @modelcontextprotocol/inspector`).
 - For Chapter 10 MCP server: **Python 3.11+** and **uv**; `uv sync` pulls the pinned `fastmcp==3.4.4`. **Node.js** only if you want the MCP Inspector (`npx @modelcontextprotocol/inspector`). No API key needed — the server is local and read-only.
 - For Chapter 11 Python labs: **Python 3.11+**. Most labs are stdlib-only. `ex_18_OOPs_Python/04_Encapsulation/132_Ecap_NICE.py` needs `python-dotenv` plus local `USERNAME` and `PASSWORD` environment values; `ex_18_OOPs_Python/09_Exceptions/164.py` needs `requests`. Install both with `python3 -m pip install python-dotenv requests`. No real credentials are committed.
+- For Chapter 11 `ex_20_Collections_FileIO`: `176_Env.py` needs `python-dotenv` and a local `.env` with `DB_PASSWORD`; `179.py` needs `pandas`. Install with `python3 -m pip install python-dotenv pandas`.
+- For Chapter 11 `ex_21_PyTest`: **pytest** (`python3 -m pip install pytest`). Everything else in the folder is stdlib-only.
+- For Chapter 12 CrewAI: **Python 3.10+**, `python3 -m pip install crewai python-dotenv`, and a `GROQ_API_KEY` in `chapter_12_CrewAI/.env` (free tier works). The model id `openai/gpt-oss-120b` must match your Groq console.
 - For Job Tracker AI: **Node.js 20.19+ or 22.12+** and npm for Vite 8.
 
 ## Chapter History
@@ -2218,6 +2415,7 @@ You can read it linearly (chapter 01 → 07) or jump straight to a project:
 `e98d376` — chapter 05 API Contract Validator agent.
 `d81aef0` — chapter 05 LangFlow agents (Hello World, Bug Triage) + chapter 04 skills.
 `2d00d6f` — chapter 06 AI social media content templates + chapter 05 PROMPTS.md.
+`f8662b5` — chapter 11 ex_20 collections + file I/O, ex_21 pytest basics, chapter 12 CrewAI test analyst agent on Groq.
 
 ---
 

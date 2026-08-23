@@ -1,0 +1,11 @@
+username,password,expected_result
+admin@example.com,Admin@123,valid_login
+user1@example.com,wrongpass,invalid_password
+testuser@example.com,Test@456,valid_login
+,password123,empty_username
+demo@example.com,,empty_password
+locked@example.com,Locked@789,account_locked
+qa@example.com,Qa@2024,valid_login
+dev@example.com,dev123!,invalid_password
+Admin@example.com,Admin@123,case_sensitive_check
+user@example.com,User@999,valid_login

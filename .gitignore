@@ -39,3 +39,4 @@ __pycache__/
 # LangFlow local runtime state (Docker volume + Chroma dumps, ~150MB)
 chapter_05_AI_Agents_LangFlow/langflow-data/
 chapter_05_AI_Agents_LangFlow/chroma_backups/
+.env
