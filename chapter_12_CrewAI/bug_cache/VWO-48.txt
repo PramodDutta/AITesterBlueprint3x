@@ -1,0 +1,26 @@
+Bug Title: Shopping cart total shows $0.00 after applying discount code
+Bug ID: VWO-48
+Reporter: Pramod
+Status: To Do
+Jira Priority (as filed): Medium
+Issue Type: Bug
+Project: VWO Project
+URL: https://bugzz.atlassian.net/browse/VWO-48
+
+Environment: Production, Chrome 120, Windows 11
+Severity (Reporter): High
+
+Steps to Reproduce:
+1. Add 3+ items to shopping cart (total > $50)
+2. Apply discount code "SAVE20" (20% off)
+3. Observe the cart total
+
+Actual Result: Cart total shows $0.00 instead of discounted price
+Expected Result: Cart total should show original price minus 20%
+
+Additional Info:
+- Happens only when cart has 3+ items
+- Works fine with 1-2 items
+- Started after last Friday's deployment (v2.4.1)
+- No errors in browser console
+- API response shows correct discounted amount
