@@ -1,0 +1,14 @@
+{
+  "name": "jira-qa-crew-playwright-check",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Compiles and lists the Playwright specs this app generates, so we can prove they are syntactically valid TypeScript rather than claiming it.",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "list": "playwright test --list"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.50.0",
+    "typescript": "^5.7.0"
+  }
+}

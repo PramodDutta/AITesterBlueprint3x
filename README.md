@@ -2310,6 +2310,83 @@ Read `E2E_QA_Pipeline/E2E_QA_Pipeline.md` for the full step-by-step write-up.
 
 ---
 
+## Project - Jira QA Crew (CrewAI + Streamlit)
+
+**Concept:** `CREW_AI_QA_Pipeline/` is the blueprint above, built for real. Paste one or more Jira ticket IDs into a Streamlit app and four CrewAI agents turn them into a requirements analysis, a 12-section test plan, detailed test cases, Playwright TypeScript automation, and a traceability matrix, all downloadable as Markdown, CSV, JSON, TypeScript and a ZIP.
+
+**Why:** Chapter 12 shows one agent doing one job. This shows what changes when a crew has to survive contact with production: a provider that fails halfway, a ticket that is missing acceptance criteria, and a stakeholder who needs to know which requirement is not covered. The interesting engineering is not the agents, it is everything around them.
+
+**Q&A - the parts that are not obvious:**
+- **Q: Why is the Jira provider chosen in Python rather than by an agent?** A: Because "try MCP, fall back to REST" is a reliability decision, not a reasoning one. `JiraGateway` decides it deterministically and records which provider actually answered, so the UI can show a truthful source badge. An agent never sees the credentials.
+- **Q: Why not use the `mcps` DSL?** A: It attaches an MCP server to an agent and lets the model decide when to call it. The fallback contract needs the MCP attempt, its failure detection, and the switch to REST to be deterministic, so the app drives a contained MCP client itself and hands the analyst one narrow read-only tool. That also enforces the read-only allow-list, which an agent-attached server cannot guarantee.
+- **Q: How is hallucination actually prevented?** A: Every requirement carries the verbatim Jira text that supports it, and is labelled EXPLICIT, INFERRED, MISSING or ASSUMPTION_REQUIRING_CONFIRMATION. Coverage is computed in Python from the validated objects, never claimed by an agent, because an agent has an obvious incentive to answer "fully covered".
+- **Q: What happens when the LLM provider cannot do structured output?** A: The pipeline walks a ladder: provider-enforced JSON schema, then `response_format: json_object` with the schema in the prompt, then plain prompted JSON. A rung that gets refused is never asked for again in that run. Enforcement degrades; validation never does, because every rung ends at the same Pydantic `model_validate`.
+- **Q: Can a malicious ticket make the agent misbehave?** A: Ticket text is wrapped in an explicit untrusted-data marker and the agent is told to report embedded instructions as a risk instead of following them. The Jira tool only serves ticket keys the run started with, so "now go read SECRET-1" gets a refusal, not another ticket.
+
+**Mental model - stage gates, not a straight line:**
+
+```mermaid
+flowchart TD
+    IN[Jira IDs<br/>parse, dedupe, validate] --> GW{JiraGateway}
+    GW -->|primary| MCP[MCP provider]
+    GW -->|fallback| REST[REST v3 + ADF parser]
+    MCP --> A1
+    REST --> A1
+    A1[Agent 1<br/>Jira Analyst] -->|RequirementAnalysis| V1{validate<br/>ids, quotes, refs}
+    V1 --> A2[Agent 2<br/>Test Plan Writer]
+    A2 -->|TestPlan| V2{validate<br/>12 sections, traces}
+    V2 --> A3[Agent 3<br/>Test Case Writer]
+    A3 -->|TestCaseSuite| V3{validate<br/>dupes, coverage}
+    V3 --> A4[Agent 4<br/>Playwright Coder]
+    A4 -->|PlaywrightBundle| V4{validate<br/>no hard waits, no XPath,<br/>no secrets, honest readiness}
+    V4 --> R[Deterministic renderers<br/>MD, CSV, JSON, TS, ZIP]
+    V1 -.one repair attempt.-> A1
+    V2 -.one repair attempt.-> A2
+    V3 -.one repair attempt.-> A3
+    V4 -.one repair attempt.-> A4
+```
+
+Each ticket gets a fresh crew with memory off, so nothing leaks between tickets, and a failure on one ticket never stops the others.
+
+**Code sample - the fallback that made the difference:**
+
+```python
+# services/structured.py - providers disagree about how much structure they
+# can guarantee, so walk a ladder and remember where you landed.
+def schema_rejected(exc: BaseException) -> bool:
+    """True only when the provider refused because of the SCHEMA.
+
+    Deliberately narrow: a rate limit or an auth failure must never be
+    mistaken for a schema problem, or enforcement would silently downgrade.
+    """
+    text = str(exc).lower()
+    if "400" not in text and "invalid_request" not in text and "unsupported" not in text:
+        return False
+    return any(m in text for m in ("response_format", "json_schema", "unsupported_value"))
+```
+
+**What running it against a real provider taught us**, measured rather than assumed:
+- DeepSeek rejects `response_format: json_schema` outright with HTTP 400, but accepts `json_object`. Hence the ladder.
+- CrewAI's `Task.context` forwards the full raw text of every upstream task, so by stage three the prompt carried the whole analysis and plan. The pipeline sends a compact summary rendered from the *validated* object instead: 40-70% smaller, and it cannot carry anything validation rejected.
+- Telling a model to "be shorter" after a truncated response made it produce three times more. Retries now carry a computed character target, and the task prompts carry countable limits.
+
+**Run it:**
+
+```bash
+cd CREW_AI_QA_Pipeline
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env          # add LLM_API_KEY, and Jira creds or DEMO_MODE=true
+streamlit run app.py          # http://localhost:8501
+
+pytest                        # 260 tests, no network and no LLM cost
+python scripts/demo_smoke.py  # real pipeline over the bundled fixtures
+```
+
+`CREW_AI_QA_Pipeline/README.md` has the architecture decisions, the MCP and REST setup, deployment (Docker and Streamlit Community Cloud), and an honest limitations section.
+
+---
+
 ## Project - Job Tracker AI
 
 `Project_Job_TRACKERAI/` is a local-first job application tracker built as a Vite + React single-page app. It stores every job card in the browser with IndexedDB through the `idb` library, so there is no backend, authentication, or external database.

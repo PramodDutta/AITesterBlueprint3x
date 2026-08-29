@@ -1,0 +1,10 @@
+# Pinned to the versions this project was built and tested against
+# (Python 3.13, 2026-08-29). Mutually compatible as installed.
+crewai==1.15.17
+crewai-tools[mcp]==1.15.17
+streamlit==1.62.0
+pydantic==2.12.5
+requests==2.34.2
+python-dotenv==1.2.3
+PyYAML==6.0.3
+pandas==3.0.5

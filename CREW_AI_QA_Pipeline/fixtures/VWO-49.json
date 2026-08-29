@@ -1,0 +1,182 @@
+{
+  "key": "VWO-49",
+  "fields": {
+    "summary": "Add server-side validation so an order total of $0.00 cannot be submitted",
+    "issuetype": {
+      "name": "Story"
+    },
+    "status": {
+      "name": "In Progress"
+    },
+    "priority": {
+      "name": "High"
+    },
+    "labels": [
+      "checkout",
+      "security"
+    ],
+    "components": [
+      {
+        "name": "Orders API"
+      }
+    ],
+    "subtasks": [
+      {
+        "key": "VWO-51"
+      }
+    ],
+    "issuelinks": [
+      {
+        "type": {
+          "name": "blocks"
+        },
+        "inwardIssue": {
+          "key": "VWO-48"
+        }
+      }
+    ],
+    "description": {
+      "type": "doc",
+      "version": 1,
+      "content": [
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "type": "text",
+              "text": "As a platform owner, I want the Orders API to reject any checkout whose computed total is zero while the cart is non-empty, so that a frontend defect cannot result in a free order."
+            }
+          ]
+        },
+        {
+          "type": "heading",
+          "attrs": {
+            "level": 3
+          },
+          "content": [
+            {
+              "type": "text",
+              "text": "Acceptance Criteria"
+            }
+          ]
+        },
+        {
+          "type": "bulletList",
+          "content": [
+            {
+              "type": "listItem",
+              "content": [
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "POST /api/orders returns HTTP 422 when the submitted total is 0 and the cart contains at least one item."
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "listItem",
+              "content": [
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "The error response body includes a machine-readable code ORDER_TOTAL_INVALID."
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "listItem",
+              "content": [
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "A legitimate 100% discount coupon still succeeds and is recorded with couponType=FULL_DISCOUNT."
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "listItem",
+              "content": [
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Every rejected submission is written to the audit log with the cart id and the submitted total."
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "heading",
+          "attrs": {
+            "level": 3
+          },
+          "content": [
+            {
+              "type": "text",
+              "text": "Out of Scope"
+            }
+          ]
+        },
+        {
+          "type": "bulletList",
+          "content": [
+            {
+              "type": "listItem",
+              "content": [
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Frontend changes to the cart display are tracked in VWO-48."
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "heading",
+          "attrs": {
+            "level": 3
+          },
+          "content": [
+            {
+              "type": "text",
+              "text": "Notes"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "type": "text",
+              "text": "The exact audit log destination has not been decided yet."
+            }
+          ]
+        }
+      ]
+    },
+    "comment": {
+      "comments": []
+    }
+  }
+}

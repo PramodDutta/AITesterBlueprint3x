@@ -1,0 +1,16 @@
+services:
+  jira-qa-crew:
+    build: .
+    image: jira-qa-crew:1.0.0
+    container_name: jira-qa-crew
+    ports:
+      - "8501:8501"
+    env_file:
+      - .env
+    environment:
+      # Configuration stays explicit inside the container.
+      JIRA_QA_CREW_SKIP_DOTENV: "1"
+      OUTPUT_DIR: /app/outputs
+    volumes:
+      - ./outputs:/app/outputs
+    restart: unless-stopped

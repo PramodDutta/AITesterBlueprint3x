@@ -1,0 +1,62 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "jira-qa-crew"
+version = "1.0.0"
+description = "AI-powered QA artifact generator: Jira to test plan, test cases, traceability and Playwright automation"
+requires-python = ">=3.11"
+dependencies = [
+    "crewai==1.15.17",
+    "crewai-tools[mcp]==1.15.17",
+    "streamlit==1.62.0",
+    "pydantic==2.12.5",
+    "requests==2.34.2",
+    "python-dotenv==1.2.3",
+    "PyYAML==6.0.3",
+    "pandas==3.0.5",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest==9.0.2",
+    "pytest-cov",
+    "ruff>=0.8",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+jira_qa_crew = ["prompts/*.yaml"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# Our domain models are named TestPlan/TestCase/TestStep; stop pytest trying to
+# collect them as test classes.
+python_classes = ["*Tests"]
+pythonpath = ["src", "."]
+addopts = "-q --strict-markers"
+markers = [
+    "integration: hits a real Jira or a real LLM; opt-in only, never run in CI",
+]
+filterwarnings = ["ignore::DeprecationWarning"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src", "tests"]
+exclude = [".venv", "outputs", "node_modules"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "C4", "SIM", "RET", "ARG", "BLE"]
+ignore = [
+    "E501",    # long lines are handled by the formatter, not the linter
+    "B008",    # Streamlit and pydantic idioms call functions in defaults
+    "RET504",  # a named result before return is often clearer
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["ARG", "B011", "SIM117"]
+"app.py" = ["E402"]  # sys.path must be set before the package imports
