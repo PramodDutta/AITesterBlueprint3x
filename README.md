@@ -201,6 +201,29 @@ mindmap
       Groq LLM via OpenAI-compatible URL
       Task + Crew + kickoff
       Requirement to 5-10 P0 test cases
+      Bug triage crew
+        Severity vs priority
+        Root cause + kill tests
+        Test strategy handoff
+    Ch 13 - Jira QA Crew (app)
+      Four agents, sequential
+        Analyst - Plan - Cases - Playwright
+      MCP primary, REST fallback
+        Chosen in Python, not by an agent
+      Pydantic contracts per stage
+        Validation gate + one repair
+      Traceability computed, not claimed
+      Streamlit UI + ZIP artifacts
+      260 tests, no live Jira or LLM
+    Ch 14 - LLM Evaluation
+      Why assertEquals breaks
+        Non-determinism
+        Open-ended outputs
+      Hallucination + faithfulness
+      Golden dataset + ground truth
+      LLM-as-judge
+      Relevancy + context precision
+      Cost and latency as signals
     E2E AI QA Pipeline (blueprint)
       Jira JQL to test plan
       RAG test cases
@@ -2310,9 +2333,9 @@ Read `E2E_QA_Pipeline/E2E_QA_Pipeline.md` for the full step-by-step write-up.
 
 ---
 
-## Project - Jira QA Crew (CrewAI + Streamlit)
+## Chapter 13 - Jira QA Crew (CrewAI + Streamlit)
 
-**Concept:** `CREW_AI_QA_Pipeline/` is the blueprint above, built for real. Paste one or more Jira ticket IDs into a Streamlit app and four CrewAI agents turn them into a requirements analysis, a 12-section test plan, detailed test cases, Playwright TypeScript automation, and a traceability matrix, all downloadable as Markdown, CSV, JSON, TypeScript and a ZIP.
+**Concept:** `chapter_13_CREW_AI_QA_Pipeline/` is the blueprint above, built for real. Paste one or more Jira ticket IDs into a Streamlit app and four CrewAI agents turn them into a requirements analysis, a 12-section test plan, detailed test cases, Playwright TypeScript automation, and a traceability matrix, all downloadable as Markdown, CSV, JSON, TypeScript and a ZIP.
 
 **Why:** Chapter 12 shows one agent doing one job. This shows what changes when a crew has to survive contact with production: a provider that fails halfway, a ticket that is missing acceptance criteria, and a stakeholder who needs to know which requirement is not covered. The interesting engineering is not the agents, it is everything around them.
 
@@ -2373,7 +2396,7 @@ def schema_rejected(exc: BaseException) -> bool:
 **Run it:**
 
 ```bash
-cd CREW_AI_QA_Pipeline
+cd chapter_13_CREW_AI_QA_Pipeline
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env          # add LLM_API_KEY, and Jira creds or DEMO_MODE=true
@@ -2383,7 +2406,79 @@ pytest                        # 260 tests, no network and no LLM cost
 python scripts/demo_smoke.py  # real pipeline over the bundled fixtures
 ```
 
-`CREW_AI_QA_Pipeline/README.md` has the architecture decisions, the MCP and REST setup, deployment (Docker and Streamlit Community Cloud), and an honest limitations section.
+`chapter_13_CREW_AI_QA_Pipeline/README.md` has the architecture decisions, the MCP and REST setup, deployment (Docker and Streamlit Community Cloud), and an honest limitations section.
+
+---
+
+## Chapter 14 - LLM Evaluation
+
+**Concept:** LLM evaluation is scoring a model's output along measurable axes (relevancy, faithfulness, safety, cost) instead of comparing it to one expected string. `chapter_14_LLM_Eval/` covers the vocabulary and the method; DeepEval is the tool used to demonstrate it, and the tool is replaceable.
+
+**Why:** `assertEquals` assumes one correct answer that never changes. An LLM gives a different answer to the same prompt twice, and "summarize this document" has no single right output, so a pass/fail equality check cannot express whether the system is working.
+
+**Q&A - why use this?**
+- **Q: When do I reach for it?** A: The moment a test asserts on text a model produced. If the output is generated rather than looked up, equality assertions will flake and you need threshold-based scores instead.
+- **Q: What does it replace?** A: Not your test suite, just the assertion. You still arrange and act the same way; you swap `assertEquals(expected, actual)` for a scored metric with a threshold, such as faithfulness >= 0.8 against the retrieved context.
+- **Q: What is the gotcha?** A: LLM-as-judge is itself an LLM, so it is non-deterministic and biased too. Pin the judge model, keep a human-written golden dataset as the reference, and treat a score as a signal rather than proof.
+
+**Mental model - from a prompt to a graded result:**
+
+```mermaid
+flowchart TD
+    GD[(Golden dataset<br/>input to expected output)] --> RUN
+    P[Prompt<br/>system + user + retrieved context] --> RUN[Run the LLM]
+    RUN --> C[Completion]
+    C --> J{Evaluator}
+    GT[(Ground truth<br/>human written)] --> J
+    CTX[(Retrieved context)] --> J
+    J -->|rule based| M1[Exact / regex / schema]
+    J -->|model based| M2[Semantic similarity]
+    J -->|LLM as judge| M3[Relevancy, faithfulness,<br/>correctness]
+    M1 --> SC[Scores vs thresholds]
+    M2 --> SC
+    M3 --> SC
+    SC -->|pass| OK[Ship]
+    SC -->|below threshold| FAIL[Fail the build<br/>+ show the failing case]
+    C --> COST[Cost + p95 latency<br/>first-class signals]
+```
+
+**The vocabulary, in one table:**
+
+| Term | What it actually means |
+| --- | --- |
+| Prompt | The input: system instructions, user message, and often retrieved context |
+| Completion | The output being evaluated |
+| Ground truth | The human-written correct answer, used as the reference |
+| Golden dataset | Curated input to expected-output pairs. Your regression suite, and your test data |
+| Evaluator / judge | Whatever assigns the score: a rule, a model, or another LLM |
+| Hallucination | A fluent, confident statement not grounded in the facts or the provided context |
+| Faithfulness | Does the answer stick to the retrieved context without inventing things |
+| Relevancy | Does the answer actually address the question that was asked |
+| Context precision / recall | Did retrieval fetch the right chunks, and did it fetch all of them |
+
+**Code sample - a threshold assertion instead of an equality one:**
+
+```python
+from deepeval import assert_test
+from deepeval.metrics import AnswerRelevancyMetric, FaithfulnessMetric
+from deepeval.test_case import LLMTestCase
+
+# One case out of a golden dataset. retrieval_context is what RAG actually
+# fetched, so faithfulness can check the answer against it rather than vibes.
+case = LLMTestCase(
+    input="Does the cart total include the SAVE20 discount?",
+    actual_output=rag_pipeline("Does the cart total include the SAVE20 discount?"),
+    retrieval_context=["SAVE20 applies 20% off the cart subtotal before tax."],
+)
+
+# Scores, not equality. A threshold is a product decision, so write it down.
+assert_test(case, [
+    AnswerRelevancyMetric(threshold=0.7),   # did it answer the question asked
+    FaithfulnessMetric(threshold=0.8),      # did it stay inside the context
+])
+```
+
+Read `chapter_14_LLM_Eval/README.md` for the full concept notes.
 
 ---
 
@@ -2459,6 +2554,11 @@ You can read it linearly (chapter 01 → 07) or jump straight to a project:
 - **"I want an AI agent that writes P0 test cases from a requirement."** → `chapter_12_CrewAI/01_test_analyst_Agent.py` — CrewAI agent on Groq.
 - **"I want LangFlow up without remembering the docker run flags."** → `chapter_05_AI_Agents_LangFlow/langflow-up.sh` (and `langflow-down.sh` to stop).
 - **"I want the big picture — Jira story to executed automation."** → `E2E_QA_Pipeline/E2E_QA_Pipeline.md`.
+- **"I want an agent crew that triages a bug: severity, root cause, and the tests to add."** → `chapter_12_CrewAI/04_Build_QABugTriageCrew_Prod.py`.
+- **"I want the blueprint actually built - Jira ticket in, QA pack out."** → `chapter_13_CREW_AI_QA_Pipeline/` — Streamlit app, `streamlit run app.py`.
+- **"I want to see MCP with a REST fallback done properly."** → `chapter_13_CREW_AI_QA_Pipeline/src/jira_qa_crew/jira/gateway.py` — the provider choice is Python, never an agent decision.
+- **"How do I stop an agent inventing requirements?"** → `chapter_13_CREW_AI_QA_Pipeline/src/jira_qa_crew/services/validation.py` — deterministic checks after every stage.
+- **"How do I test an LLM when assertEquals does not work?"** → `chapter_14_LLM_Eval/README.md` — golden datasets, judges, faithfulness, and thresholds.
 - **"I want to track job applications locally."** → `Project_Job_TRACKERAI/`.
 
 ## Requirements
