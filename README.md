@@ -224,7 +224,7 @@ mindmap
       LLM-as-judge
       Relevancy + context precision
       Cost and latency as signals
-    E2E AI QA Pipeline (blueprint)
+    Ch 16 - E2E AI QA Pipeline (blueprint)
       Jira JQL to test plan
       RAG test cases
       Playwright .md automation
@@ -532,9 +532,23 @@ mindmap
 │
 ├── chapter_12_CrewAI/             CrewAI multi-agent framework labs
 │   ├── 01_test_analyst_Agent.py   QA Analyst agent: requirement -> P0 test cases
+│   ├── 02_Research_Write_AI_Agent.py  Two-agent research + documentation crew
+│   ├── 04_Build_QABugTriageCrew_Prod.py  Bug triage: severity, RCA, test strategy
 │   └── .env                       Groq key + model id (gitignored)
 │
-├── E2E_QA_Pipeline/               End-to-end AI QA pipeline blueprint
+├── chapter_13_CREW_AI_QA_Pipeline/  Jira QA Crew: Streamlit app, 4 CrewAI agents
+│   ├── app.py                     Streamlit entry point (presentation only)
+│   ├── src/jira_qa_crew/          config, models, jira/, crew/, services/, ui/
+│   │   ├── jira/gateway.py        MCP primary -> REST fallback, decided in Python
+│   │   ├── services/pipeline.py   Stage gates, validation, one repair attempt
+│   │   └── services/traceability.py  Coverage computed, never claimed by an agent
+│   ├── tests/                     260 tests, no live Jira and no LLM cost
+│   └── .env                       LLM + Jira credentials (gitignored)
+│
+├── chapter_14_LLM_Eval/           Why assertEquals breaks on generated text
+│   └── README.md                  Ground truth, golden dataset, judges, faithfulness
+│
+├── chapter_16_E2E_QA_Pipeline/    End-to-end AI QA pipeline blueprint
 │   └── E2E_QA_Pipeline.md         8-step flow: Jira -> plan -> cases -> automation -> run -> RCA
 │
 └── Project_Job_TRACKERAI/         Local-first job application tracker
@@ -2302,37 +2316,6 @@ Run it with the same interpreter that has crewai installed: `python chapter_12_C
 
 ---
 
-## End-to-End AI QA Pipeline (Blueprint)
-
-**Concept:** `E2E_QA_Pipeline/` is the blueprint that ties the whole course together — an AI pipeline that reads a Jira story and drives it all the way to executed automation and an analysed results dashboard, with a RAG pipeline supplying historical test plans and cases along the way.
-
-**Why:** Each chapter builds one capability (prompts, agents, RAG, automation). This document shows how they compose into a single autonomous loop: from a Jira story to test plan, test cases, Playwright automation, execution, and root-cause analysis — no manual step in between.
-
-**Q&A — the end-to-end loop:**
-- **Q: Where does RAG fit?** A: Steps 3 and 4. The agent generates the test plan and test cases by referencing a RAG store of past plans, cases, and testing docs — so output is context-aware and reusable, not generated from scratch.
-- **Q: How do test cases become runnable?** A: Step 5 — a LangChain agent converts them into `.md` automation-flow files against the Playwright framework, which Browser Bash (step 6) executes with a cost-effective LLM (e.g. DeepSeek).
-- **Q: What closes the loop?** A: Step 8 — `result.json` is fed back to an agent that checks flakiness, runs RCA, triages failures, and pushes the final data to a dashboard.
-
-**The 8-step flow:**
-
-```mermaid
-flowchart TD
-    J[1. Fetch Jira stories<br/>JQL + LangChain agent] --> P[2. Process story<br/>one by one - VWO-109]
-    P --> TP[3. Create test plan]
-    TP --> TC[4. Generate test cases]
-    RAG[(RAG pipeline<br/>past plans + cases + docs)] -.reference.-> TP
-    RAG -.reference.-> TC
-    TC --> MD[5. Convert to .md<br/>Playwright automation flow]
-    MD --> EX[6. Execute via Browser Bash<br/>DeepSeek / cheap LLM]
-    EX --> RJ[7. Generate result.json<br/>pass/fail, logs, errors]
-    RJ --> AN[8. Analyze results<br/>flakiness + RCA + triage]
-    AN --> DASH[Dashboard<br/>final reporting]
-```
-
-Read `E2E_QA_Pipeline/E2E_QA_Pipeline.md` for the full step-by-step write-up.
-
----
-
 ## Chapter 13 - Jira QA Crew (CrewAI + Streamlit)
 
 **Concept:** `chapter_13_CREW_AI_QA_Pipeline/` is the blueprint above, built for real. Paste one or more Jira ticket IDs into a Streamlit app and four CrewAI agents turn them into a requirements analysis, a 12-section test plan, detailed test cases, Playwright TypeScript automation, and a traceability matrix, all downloadable as Markdown, CSV, JSON, TypeScript and a ZIP.
@@ -2482,6 +2465,37 @@ Read `chapter_14_LLM_Eval/README.md` for the full concept notes.
 
 ---
 
+## Chapter 16 - End-to-End AI QA Pipeline (Blueprint)
+
+**Concept:** `chapter_16_E2E_QA_Pipeline/` is the blueprint that ties the whole course together — an AI pipeline that reads a Jira story and drives it all the way to executed automation and an analysed results dashboard, with a RAG pipeline supplying historical test plans and cases along the way.
+
+**Why:** Each chapter builds one capability (prompts, agents, RAG, automation). This document shows how they compose into a single autonomous loop: from a Jira story to test plan, test cases, Playwright automation, execution, and root-cause analysis — no manual step in between.
+
+**Q&A — the end-to-end loop:**
+- **Q: Where does RAG fit?** A: Steps 3 and 4. The agent generates the test plan and test cases by referencing a RAG store of past plans, cases, and testing docs — so output is context-aware and reusable, not generated from scratch.
+- **Q: How do test cases become runnable?** A: Step 5 — a LangChain agent converts them into `.md` automation-flow files against the Playwright framework, which Browser Bash (step 6) executes with a cost-effective LLM (e.g. DeepSeek).
+- **Q: What closes the loop?** A: Step 8 — `result.json` is fed back to an agent that checks flakiness, runs RCA, triages failures, and pushes the final data to a dashboard.
+
+**The 8-step flow:**
+
+```mermaid
+flowchart TD
+    J[1. Fetch Jira stories<br/>JQL + LangChain agent] --> P[2. Process story<br/>one by one - VWO-109]
+    P --> TP[3. Create test plan]
+    TP --> TC[4. Generate test cases]
+    RAG[(RAG pipeline<br/>past plans + cases + docs)] -.reference.-> TP
+    RAG -.reference.-> TC
+    TC --> MD[5. Convert to .md<br/>Playwright automation flow]
+    MD --> EX[6. Execute via Browser Bash<br/>DeepSeek / cheap LLM]
+    EX --> RJ[7. Generate result.json<br/>pass/fail, logs, errors]
+    RJ --> AN[8. Analyze results<br/>flakiness + RCA + triage]
+    AN --> DASH[Dashboard<br/>final reporting]
+```
+
+Read `chapter_16_E2E_QA_Pipeline/E2E_QA_Pipeline.md` for the full step-by-step write-up.
+
+---
+
 ## Project - Job Tracker AI
 
 `Project_Job_TRACKERAI/` is a local-first job application tracker built as a Vite + React single-page app. It stores every job card in the browser with IndexedDB through the `idb` library, so there is no backend, authentication, or external database.
@@ -2553,7 +2567,7 @@ You can read it linearly (chapter 01 → 07) or jump straight to a project:
 - **"How do I write my first pytest tests?"** → `chapter_11_Python_Learning/ex_21_PyTest/` — start with `test_180.py`, then read `PyTest_Cheatsheet.md`.
 - **"I want an AI agent that writes P0 test cases from a requirement."** → `chapter_12_CrewAI/01_test_analyst_Agent.py` — CrewAI agent on Groq.
 - **"I want LangFlow up without remembering the docker run flags."** → `chapter_05_AI_Agents_LangFlow/langflow-up.sh` (and `langflow-down.sh` to stop).
-- **"I want the big picture — Jira story to executed automation."** → `E2E_QA_Pipeline/E2E_QA_Pipeline.md`.
+- **"I want the big picture — Jira story to executed automation."** → `chapter_16_E2E_QA_Pipeline/E2E_QA_Pipeline.md`.
 - **"I want an agent crew that triages a bug: severity, root cause, and the tests to add."** → `chapter_12_CrewAI/04_Build_QABugTriageCrew_Prod.py`.
 - **"I want the blueprint actually built - Jira ticket in, QA pack out."** → `chapter_13_CREW_AI_QA_Pipeline/` — Streamlit app, `streamlit run app.py`.
 - **"I want to see MCP with a REST fallback done properly."** → `chapter_13_CREW_AI_QA_Pipeline/src/jira_qa_crew/jira/gateway.py` — the provider choice is Python, never an agent decision.
