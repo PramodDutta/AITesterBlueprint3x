@@ -224,6 +224,15 @@ mindmap
       LLM-as-judge
       Relevancy + context precision
       Cost and latency as signals
+    Ch 15 - DeepEval Hands-On
+      pytest-shaped LLM tests
+        LLMTestCase + assert_test
+      AnswerRelevancyMetric
+        Threshold, not equality
+      The judge is configurable
+        Groq gpt-oss-120b as local model
+        OpenAI, Ollama, LiteLLM
+      deepeval CLI provider switch
     Ch 16 - E2E AI QA Pipeline (blueprint)
       Jira JQL to test plan
       RAG test cases
@@ -547,6 +556,12 @@ mindmap
 │
 ├── chapter_14_LLM_Eval/           Why assertEquals breaks on generated text
 │   └── README.md                  Ground truth, golden dataset, judges, faithfulness
+│
+├── chapter_15_DeepEval/           DeepEval hands-on: the first scored test
+│   ├── Notes.md                   venv setup, install, LLM-brain options
+│   ├── test_01_Anwser_Relevancy.py  AnswerRelevancyMetric at threshold 0.9
+│   ├── .deepeval/                 Provider config + run cache (gitignored)
+│   └── .env                       Judge model API key (gitignored)
 │
 ├── chapter_16_E2E_QA_Pipeline/    End-to-end AI QA pipeline blueprint
 │   └── E2E_QA_Pipeline.md         8-step flow: Jira -> plan -> cases -> automation -> run -> RCA
@@ -2465,6 +2480,85 @@ Read `chapter_14_LLM_Eval/README.md` for the full concept notes.
 
 ---
 
+## Chapter 15 - DeepEval in Practice
+
+**Concept:** `chapter_15_DeepEval/` is chapter 14's theory turned into a running pytest file. DeepEval wraps an LLM interaction in an `LLMTestCase`, scores it with a metric, and fails the test when the score drops below a threshold you chose.
+
+**Why:** Reading about faithfulness and relevancy does not tell you what breaks in practice. Actually installing the tool surfaces the two things that bite everyone: the judge is a separate LLM you have to pay for and configure, and a threshold is a product decision nobody makes for you.
+
+**Q&A - why use this?**
+- **Q: When do I reach for it?** A: The first time you need a scored assertion inside a suite you already run. DeepEval is a pytest plugin, so `pytest test_01_Anwser_Relevancy.py` works unchanged and CI needs no new runner.
+- **Q: What does it replace?** A: The assertion, not the harness. `assert_test(case, [metric])` sits exactly where `assert actual == expected` used to, and everything around it stays ordinary pytest.
+- **Q: What is the gotcha?** A: Every metric call costs a real LLM request against your judge model. A three-metric test on 100 golden cases is 300 paid calls, so pick the judge for price, keep the golden dataset small on purpose, and never point metrics at a production key by accident.
+
+**The judge is a separate model - and it is configurable:**
+
+The system under test and the model that grades it are two different things. DeepEval defaults to OpenAI, but Groq's endpoint is OpenAI-compatible, so `openai/gpt-oss-120b` can do the grading for a fraction of the cost. Note that `deepeval set-grok` is xAI's Grok, not Groq.com - Groq is wired in as a "local model".
+
+```mermaid
+flowchart TD
+    T["pytest test_01_Anwser_Relevancy.py"] --> TC["LLMTestCase<br/>input + actual_output + context"]
+    TC --> M["AnswerRelevancyMetric&#40;threshold=0.9&#41;"]
+    M --> R{"Which judge?<br/>.deepeval provider flag"}
+    R -->|USE_OPENAI_MODEL| O["api.openai.com<br/>gpt-4o-mini"]
+    R -->|USE_LOCAL_MODEL| G["api.groq.com/openai/v1<br/>openai/gpt-oss-120b"]
+    R -->|USE_OLLAMA_MODEL| L["localhost:11434<br/>free, slower"]
+    O --> SC["Score 0.0 - 1.0"]
+    G --> SC
+    L --> SC
+    SC -->|">= 0.9"| PASS["Test passes"]
+    SC -->|"< 0.9"| FAIL["Test fails<br/>+ the judge's reason"]
+```
+
+**Point DeepEval at a judge, once per machine:**
+
+```bash
+cd chapter_15_DeepEval
+python3 -m venv venv && source venv/bin/activate
+pip install -U deepeval requests
+
+# Groq, cheap: OpenAI-compatible endpoint registered as a "local" model.
+# --prompt-api-key hides the key and keeps it out of shell history.
+deepeval set-local-model \
+  --model openai/gpt-oss-120b \
+  --base-url "https://api.groq.com/openai/v1" \
+  --format json \
+  --prompt-api-key
+
+# Or plain OpenAI:  export OPENAI_API_KEY=sk-...
+#                   deepeval set-openai --model gpt-4o-mini --prompt-api-key
+```
+
+**Code sample - the whole first test:**
+
+```python
+from deepeval.test_case import LLMTestCase
+from deepeval import assert_test
+from deepeval.metrics import AnswerRelevancyMetric
+
+def test_hello_world():
+    test = LLMTestCase(
+        input="What is 2+2?",
+        actual_output="4",              # what your chatbot actually returned
+        expected_output="4",            # the ground truth, for reference
+        context=["Basic arithmetice perform and give result"],
+    )
+    # 0.9 is deliberately strict. Relevancy asks "did it answer the question
+    # asked", not "is it correct" - a confidently wrong answer can still
+    # score 1.0 here, which is why faithfulness is a separate metric.
+    assert_test(test, [AnswerRelevancyMetric(threshold=0.9)])
+```
+
+Run it with `pytest test_01_Anwser_Relevancy.py` or `deepeval test run test_01_Anwser_Relevancy.py`. Read `chapter_15_DeepEval/Notes.md` for the install checklist and the free-LLM options.
+
+| Judge choice | Cost | Use it when |
+| --- | --- | --- |
+| OpenAI `gpt-4o-mini` | Paid, cheap | You want DeepEval's defaults and best-tested path |
+| Groq `openai/gpt-oss-120b` | Paid, very cheap, free tier | Local runs and learning; fast, OpenAI-compatible |
+| Ollama, local | Free | No key at all, offline; slower and less consistent scores |
+
+---
+
 ## Chapter 16 - End-to-End AI QA Pipeline (Blueprint)
 
 **Concept:** `chapter_16_E2E_QA_Pipeline/` is the blueprint that ties the whole course together — an AI pipeline that reads a Jira story and drives it all the way to executed automation and an analysed results dashboard, with a RAG pipeline supplying historical test plans and cases along the way.
@@ -2573,6 +2667,7 @@ You can read it linearly (chapter 01 → 07) or jump straight to a project:
 - **"I want to see MCP with a REST fallback done properly."** → `chapter_13_CREW_AI_QA_Pipeline/src/jira_qa_crew/jira/gateway.py` — the provider choice is Python, never an agent decision.
 - **"How do I stop an agent inventing requirements?"** → `chapter_13_CREW_AI_QA_Pipeline/src/jira_qa_crew/services/validation.py` — deterministic checks after every stage.
 - **"How do I test an LLM when assertEquals does not work?"** → `chapter_14_LLM_Eval/README.md` — golden datasets, judges, faithfulness, and thresholds.
+- **"Show me one LLM test actually running."** → `chapter_15_DeepEval/test_01_Anwser_Relevancy.py` — DeepEval + pytest, with a Groq judge.
 - **"I want to track job applications locally."** → `Project_Job_TRACKERAI/`.
 
 ## Requirements
@@ -2594,6 +2689,7 @@ You can read it linearly (chapter 01 → 07) or jump straight to a project:
 - For Chapter 11 `ex_20_Collections_FileIO`: `176_Env.py` needs `python-dotenv` and a local `.env` with `DB_PASSWORD`; `179.py` needs `pandas`. Install with `python3 -m pip install python-dotenv pandas`.
 - For Chapter 11 `ex_21_PyTest`: **pytest** (`python3 -m pip install pytest`). Everything else in the folder is stdlib-only.
 - For Chapter 12 CrewAI: **Python 3.10+**, `python3 -m pip install crewai python-dotenv`, and a `GROQ_API_KEY` in `chapter_12_CrewAI/.env` (free tier works). The model id `openai/gpt-oss-120b` must match your Groq console.
+- For Chapter 15 DeepEval: **Python 3.11+**, a venv, and `pip install -U deepeval requests`. Needs an API key for whichever judge model you configure — `OPENAI_API_KEY`, or a Groq key registered with `deepeval set-local-model`. Every metric assertion is a paid LLM call.
 - For Job Tracker AI: **Node.js 20.19+ or 22.12+** and npm for Vite 8.
 
 ## Chapter History

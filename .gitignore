@@ -40,3 +40,9 @@ __pycache__/
 chapter_05_AI_Agents_LangFlow/langflow-data/
 chapter_05_AI_Agents_LangFlow/chroma_backups/
 .env
+# DeepEval local provider config, run cache and telemetry
+**/.deepeval/
+.env.local
+
+# pytest cache
+.pytest_cache/
