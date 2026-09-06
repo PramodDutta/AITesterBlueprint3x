@@ -7,6 +7,15 @@ Each chapter pairs concept material with a hands-on project, a prompt template, 
 - **Website:** [The Testing Academy](https://thetestingacademy.com/)
 - **LinkedIn:** [linkedin.com/in/pramoddutta](https://www.linkedin.com/in/pramoddutta/)
 
+### Live
+
+| | |
+|---|---|
+| **[DeepEval Dashboard](https://deepeval-dashboard.vercel.app)** | 25 metrics scored against a live chatbot and RAG pipeline. Real scores, judge reasons, latencies and token counts from one recorded run. |
+| **[How the framework works](https://deepeval-dashboard.vercel.app/how-it-works)** | Illustrated walkthrough: the evaluation loop, what each metric reads, the attack library, and the four ways the numbers mislead you. |
+
+Both are chapter 16. Nothing to install to read them; clone the repo to run the suite live.
+
 ---
 
 ## Curriculum Map
@@ -591,6 +600,7 @@ mindmap
 ├── chapter_16_DeepEval_Framwork/  A judge model grading two live apps
 │   ├── prompts_deep_eval_framework.md   Every prompt that built it, in order
 │   ├── How_The_DeepEval_Framework_Works.html   Illustrated walkthrough
+│   │                              -> deepeval-dashboard.vercel.app/how-it-works
 │   ├── 01_Chatbot_Shopeasy_chatbot/     Subsystem A - the app under test (:8201)
 │   │   └── 01_chatbot/            FastAPI + Groq support bot, React UI
 │   ├── 02_RAG_Explorer/           Subsystem B - retrieval, exposed (:8202)
@@ -602,6 +612,8 @@ mindmap
 │       ├── targers/               HTTP clients for subsystems A and B
 │       ├── datasets/              goldens, conversations, 27-prompt attack library
 │       ├── token_meter.py         target vs judge token split
+│       ├── dashboard/snapshot/    capture a run -> bake a static page -> Vercel
+│       │                          -> deepeval-dashboard.vercel.app
 │       ├── tests/                 289 cases: 7 chatbot files, 12 RAG files, smoke
 │       └── dashboard/             the grid UI, one card per metric
 │
@@ -2669,9 +2681,14 @@ Security held: injection, jailbreak, obfuscation, social engineering and RAG exf
 3. **Read the judge's reason next to its score.** One rubric returned 0.1 while its own explanation said "refuses to reveal the system prompt, matching the criteria". A score that disagrees with its own reasoning is a wiring bug, not a finding.
 4. **Never write "Score 0 if..." inside a G-Eval step.** G-Eval derives a continuous score from the steps and score directives fight that mechanism. Describe what to look for, state the direction once at the end. That rewrite took the rubric above from 0.1 to 1.00.
 
-**Shareable build:** the live dashboard needs localhost and an API key, so the public one is a recorded run - <https://deepeval-dashboard.vercel.app>. Real scores, reasons, latencies and token counts from one execution, baked into a static page with no key. Rebuild it with `dashboard/snapshot/capture.py` then `build_static.py`.
+**See it without installing anything:**
 
-`prompts_deep_eval_framework.md` records every prompt that built this chapter, in order, with what each one produced. `How_The_DeepEval_Framework_Works.html` is the illustrated walkthrough.
+- **[deepeval-dashboard.vercel.app](https://deepeval-dashboard.vercel.app)** — all 25 cards with real scores, judge reasons, latencies and token counts, plus the per-case Details drill-down.
+- **[/how-it-works](https://deepeval-dashboard.vercel.app/how-it-works)** — the illustrated walkthrough of the loop, the metrics and the gotchas.
+
+The hosted dashboard is a *recorded* run, not a live one: the live version calls `localhost:8201` and `:8202` and needs a Groq key server-side, which on a public URL is an open tab on your quota. Every number on the hosted page came from one real execution; only the Run buttons are inert. Rebuild it with `dashboard/snapshot/capture.py` then `build_static.py`.
+
+`prompts_deep_eval_framework.md` records every prompt that built this chapter, in order, with what each one produced.
 
 ---
 
@@ -2784,6 +2801,10 @@ You can read it linearly (chapter 01 → 07) or jump straight to a project:
 - **"How do I stop an agent inventing requirements?"** → `chapter_13_CREW_AI_QA_Pipeline/src/jira_qa_crew/services/validation.py` — deterministic checks after every stage.
 - **"How do I test an LLM when assertEquals does not work?"** → `chapter_14_LLM_Eval/README.md` — golden datasets, judges, faithfulness, and thresholds.
 - **"Show me one LLM test actually running."** → `chapter_15_DeepEval/test_01_Anwser_Relevancy.py` — DeepEval + pytest, with a Groq judge.
+- **"Just show me the results, I do not want to install anything."** → [deepeval-dashboard.vercel.app](https://deepeval-dashboard.vercel.app) — 25 metrics, real scores and judge reasons from a recorded run.
+- **"How does the whole eval framework fit together?"** → [deepeval-dashboard.vercel.app/how-it-works](https://deepeval-dashboard.vercel.app/how-it-works) — the loop, the metrics, the attack library, the gotchas.
+- **"I want a full eval suite, not one metric."** → `chapter_16_DeepEval_Framwork/03_DeepFramework/` — 25 cards, 289 pytest cases, `metrics_catalog.py` is the single source of truth.
+- **"How do I red-team a support bot?"** → `chapter_16_DeepEval_Framwork/03_DeepFramework/datasets/attacks.py` — 27 prompts grouped by technique.
 - **"I want to track job applications locally."** → `Project_Job_TRACKERAI/`.
 
 ## Requirements

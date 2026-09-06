@@ -149,7 +149,10 @@ page = f'''<!doctype html>
     {esc(DATA["captured_at"][:10])} against a running chatbot and RAG pipeline, judged by
     {esc(DATA['status']['judge']['model'])}. A static page cannot call a model, so the
     Run buttons are replaced by a Recorded badge &mdash; everything else, including the
-    per-case Details, is the real output. Clone the repo to run it live.
+    per-case Details, is the real output.
+    <a href="/how-it-works">Read how the framework works</a>, or
+    <a href="https://github.com/PramodDutta/AITesterBlueprint3x/tree/main/chapter_16_DeepEval_Framwork">clone
+    the repo</a> to run it live.
   </div>
 
   <section class="status">
@@ -257,6 +260,48 @@ applyFilters();
 
 DIST.mkdir(parents=True, exist_ok=True)
 (DIST / "index.html").write_text(page)
+
+# ---------------------------------------------------------------------------
+# Second page: the illustrated walkthrough. It is authored as a fragment (no
+# <html>/<head>), so wrap it before hosting it standalone.
+# ---------------------------------------------------------------------------
+EXPLAINER_SRC = ROOT.parent / "How_The_DeepEval_Framework_Works.html"
+if EXPLAINER_SRC.exists():
+    frag = EXPLAINER_SRC.read_text()
+    nav = '''<div style="position:sticky;top:0;z-index:20;background:var(--paper);
+     border-bottom:2px solid var(--ink);padding:10px 24px;display:flex;gap:18px;
+     align-items:center;font-family:var(--sans);font-size:14px">
+  <strong style="font-weight:600">DeepEval Framework</strong>
+  <a href="/" style="color:var(--blue);text-decoration:none">&larr; the dashboard</a>
+  <a href="https://github.com/PramodDutta/AITesterBlueprint3x/tree/main/chapter_16_DeepEval_Framwork"
+     style="color:var(--blue);text-decoration:none;margin-left:auto">source on GitHub</a>
+</div>'''
+    wrapped = (
+        '<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n'
+        '<meta name="viewport" content="width=device-width,initial-scale=1">\n'
+        '<meta name="description" content="How a judge model grades a chatbot and a '
+        'RAG pipeline: the evaluation loop, 25 metrics, and the four ways the scores mislead you.">\n'
+        '<style>body{margin:0}img{max-width:100%}</style>\n'
+        + frag.replace("<title>", "<title>", 1)
+        + "\n</head>\n<body>\n</body>\n</html>\n"
+    )
+    # The fragment carries its own <title>, <style> and markup in document
+    # order; splitting on the first tag after the styles keeps that intact.
+    marker = '<svg width="0" height="0"'
+    head_part, _, body_part = frag.partition(marker)
+    wrapped = (
+        '<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n'
+        '<meta name="viewport" content="width=device-width,initial-scale=1">\n'
+        '<meta name="description" content="How a judge model grades a chatbot and a '
+        'RAG pipeline: the evaluation loop, 25 metrics, and the four ways the scores mislead you.">\n'
+        '<style>body{margin:0}img{max-width:100%}</style>\n'
+        + head_part
+        + '</head>\n<body>\n' + nav + '\n' + marker + body_part
+        + '\n</body>\n</html>\n'
+    )
+    (DIST / "how-it-works.html").write_text(wrapped)
+    print(f"built {DIST/'how-it-works.html'}  "
+          f"({(DIST/'how-it-works.html').stat().st_size/1024:.0f} KB)")
 (HERE / "vercel.json").write_text(json.dumps({
     "$schema": "https://openapi.vercel.sh/vercel.json",
     "outputDirectory": "dist",

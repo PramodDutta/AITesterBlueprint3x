@@ -1,5 +1,8 @@
 # Subsystem C - The DeepEval Framework
 
+**[See the results](https://deepeval-dashboard.vercel.app)** &middot;
+**[How it works](https://deepeval-dashboard.vercel.app/how-it-works)**
+
 Scores Subsystem A (the ShopSphere chatbot) and Subsystem B (the RAG Explorer)
 with a judge LLM. Same metrics, two front doors: `pytest` for CI, a dashboard
 for teaching and demos.
@@ -132,7 +135,8 @@ venv/bin/python dashboard/snapshot/build_static.py  # bake them into dist/index.
 cd dashboard/snapshot && vercel deploy --prod       # ship it
 ```
 
-Live at <https://deepeval-dashboard.vercel.app>. Every score, reason, latency
+Live at **<https://deepeval-dashboard.vercel.app>**, with the illustrated
+walkthrough at **</how-it-works>**. Every score, reason, latency
 and token count on it came from one real execution. Run buttons become a
 Recorded badge, because a static page cannot call a judge; the per-case
 Details drill-down still works from embedded data. No key ships with it.
