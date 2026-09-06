@@ -9,21 +9,21 @@
 #     1. Answer Relevancy  — Does the chatbot answer the question asked?
 
 
-
 # Setup: DeepEval needs a "judge" LLM to score the output. Pick one.
-    # Groq (cheap, OpenAI-compatible endpoint -> registered as a local model):
-    #   deepeval set-local-model --model openai/gpt-oss-120b \
-    #       --base-url "https://api.groq.com/openai/v1" --format json --prompt-api-key
-    # OpenAI:
-    #   export OPENAI_API_KEY=your_key_here
-    #   deepeval set-openai --model gpt-4o-mini
-    # Note: `deepeval set-grok` is xAI's Grok, NOT Groq.com.
-    # Run: pytest test_01_Anwser_Relevancy.py
+# Groq (cheap, OpenAI-compatible endpoint -> registered as a local model):
+#   deepeval set-local-model --model openai/gpt-oss-120b \
+#       --base-url "https://api.groq.com/openai/v1" --format json --prompt-api-key
+# OpenAI:
+#   export OPENAI_API_KEY=your_key_here
+#   deepeval set-openai --model gpt-4o-mini
+# Note: `deepeval set-grok` is xAI's Grok, NOT Groq.com.
+# Run: pytest test_01_Anwser_Relevancy.py
 
 
 from deepeval.test_case import LLMTestCase
 from deepeval import assert_test
 from deepeval.metrics import AnswerRelevancyMetric
+
 
 def test_hello_world():
 

@@ -1,0 +1,70 @@
+{% extends "_base.html" %}
+{% set active = 'chat' %}
+{% block title %}Chat · RAG Explorer{% endblock %}
+{% block content %}
+<section class="hero">
+  <h2>RAG chat</h2>
+  <p class="lede">Ask a question — the agent retrieves relevant chunks, sends them as context to Groq, and shows you both the answer AND what was retrieved (so you can audit it).</p>
+  {% if not groq_configured %}
+    <p class="warn-banner">⚠ Mock mode active — set <code>GROQ_API_KEY</code> for live answers. Retrieval still works.</p>
+  {% endif %}
+</section>
+
+<div class="chat-shell">
+  <section class="messages" id="messages"></section>
+  <form id="composer">
+    <input id="msg" type="text" placeholder="Ask about refunds, shipping, products…" required />
+    <input id="topk" type="number" value="4" min="1" max="10" title="top-k" />
+    <button class="btn" type="submit">Ask</button>
+  </form>
+  <aside class="retrieval" id="retrieval"></aside>
+</div>
+
+<script>
+const messages = document.getElementById('messages');
+const retrieval = document.getElementById('retrieval');
+
+function bubble(role, content) {
+  const div = document.createElement('div');
+  div.className = 'msg ' + role;
+  div.innerHTML = '<div class="who">' + (role === 'user' ? 'You' : 'ShopBot') + '</div><div class="body"></div>';
+  div.querySelector('.body').textContent = content;
+  messages.appendChild(div);
+  messages.scrollTop = messages.scrollHeight;
+}
+
+function showRetrieval(hits, sources) {
+  retrieval.innerHTML = '<h3>Retrieved context (' + hits.length + ' chunks · sources: ' + sources.join(', ') + ')</h3>';
+  hits.forEach((h, i) => {
+    const card = document.createElement('article');
+    card.className = 'hit';
+    card.innerHTML = '<header><span class="rank mono">#' + (i+1) + '</span><span class="src mono">' + h.source + '</span><span class="score mono">score ' + h.score + '</span></header><p></p>';
+    card.querySelector('p').textContent = h.text;
+    retrieval.appendChild(card);
+  });
+}
+
+document.getElementById('composer').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const msg = document.getElementById('msg').value.trim();
+  const topk = +document.getElementById('topk').value;
+  if (!msg) return;
+  bubble('user', msg);
+  document.getElementById('msg').value = '';
+  bubble('assistant', '…');
+  const placeholder = messages.lastElementChild;
+  try {
+    const r = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: msg, top_k: topk }),
+    });
+    const d = await r.json();
+    placeholder.querySelector('.body').textContent = d.answer;
+    showRetrieval(d.hits || [], d.sources || []);
+  } catch (err) {
+    placeholder.querySelector('.body').textContent = 'Error: ' + err.message;
+  }
+});
+</script>
+{% endblock %}

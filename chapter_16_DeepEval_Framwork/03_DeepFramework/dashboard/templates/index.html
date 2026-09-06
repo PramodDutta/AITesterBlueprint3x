@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DeepEval Dashboard</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="logo">&#9670;</div>
+    <div>
+      <h1>DeepEval Dashboard</h1>
+      <p>Live metric runs against the chatbot and RAG pipeline</p>
+    </div>
+  </div>
+
+  <div class="ctl">
+    <label for="target">Target</label>
+    <select id="target">
+      <option value="all">All targets</option>
+      <option value="chatbot" selected>Chatbot (A)</option>
+      <option value="rag">RAG (B)</option>
+    </select>
+  </div>
+
+  <div class="ctl">
+    <label for="sample">Cases per run</label>
+    <select id="sample">
+      <option value="1" selected>1 case</option>
+      <option value="3">3 cases</option>
+      <option value="5">5 cases</option>
+    </select>
+  </div>
+
+  <div class="ctl">
+    <label for="judge">Judge model</label>
+    <input id="judge" value="{{ judge_model }}" readonly>
+  </div>
+
+  <button class="btn btn-ghost" id="refresh">Refresh status</button>
+  <button class="btn btn-primary" id="runall">&#9654; Run all visible</button>
+</header>
+
+<div class="wrap">
+
+  <section class="status">
+    <div class="stat">
+      <div class="row"><span class="dot" id="dot-chatbot"></span><b>Chatbot</b></div>
+      <code>{{ chatbot_url }}</code>
+    </div>
+    <div class="stat">
+      <div class="row"><span class="dot" id="dot-rag"></span><b>RAG</b></div>
+      <code>{{ rag_url }}</code>
+    </div>
+    <div class="stat">
+      <div class="row"><span class="dot" id="dot-judge"></span><b>Judge</b></div>
+      <code>groq &middot; {{ judge_model }}</code>
+    </div>
+    <div class="stat">
+      <div class="row"><span class="dot up"></span><b>Tokens used</b>
+        <button class="mini" id="tok-reset" title="reset the counter">reset</button></div>
+      <code id="tok-total">0 total</code>
+      <code id="tok-split" class="split">target 0 &middot; judge 0</code>
+    </div>
+    <div class="stat counts">
+      <span class="lbl">pass &middot; fail &middot; pending</span>
+      <span class="pills">
+        <span class="pill p" id="n-pass">0</span>
+        <span class="pill f" id="n-fail">0</span>
+        <span class="pill n" id="n-pending">{{ cards|length }}</span>
+      </span>
+    </div>
+  </section>
+
+  <div class="filters">
+    <span>Categories:</span>
+    {% for c in categories %}
+      <button class="chip {% if c == 'all' %}on{% endif %}" data-cat="{{ c }}">
+        {{ 'All' if c == 'all' else ('G-Eval' if c == 'geval' else c|capitalize) }}
+      </button>
+    {% endfor %}
+  </div>
+
+  <section class="grid" id="grid">
+    {% for c in cards %}
+    <article class="card" data-key="{{ c.key }}" data-cat="{{ c.category }}" data-target="{{ c.target }}">
+      <div class="top">
+        <span class="tag {{ c.category }}">{{ 'G-Eval' if c.category == 'geval' else c.category }}</span>
+        <span class="tag target">{{ c.target }}</span>
+        <span class="thr">&ge; {{ '%.2f'|format(c.threshold) }}</span>
+      </div>
+      <h3>{{ c.title }}</h3>
+      <p class="blurb">{{ c.blurb }}</p>
+
+      <div class="result">
+        <div class="head">
+          <span class="badge idle">NOT RUN</span>
+          <div class="cmp">
+            <span class="num"><b class="score">&ndash;</b><i>score</i></span>
+            <span class="op">&ge;</span>
+            <span class="num"><b class="thr-val">{{ '%.2f'|format(c.threshold) }}</b><i>threshold</i></span>
+          </div>
+        </div>
+        <div class="bar">
+          <i class="fill"></i>
+          <u class="gate" style="left:{{ (c.threshold * 100)|round(1) }}%" title="pass mark"></u>
+        </div>
+        <p class="hint">{{ c.scale_hint }}</p>
+        <p class="reason">{{ c.question }}</p>
+        <div class="meta">{{ c.cases_total }} cases available &middot; {{ c.test_file }}</div>
+        <div class="meta tok">&mdash;</div>
+      </div>
+
+      <div class="actions">
+        <button class="btn btn-primary run">&#9654; Run</button>
+        <button class="btn btn-outline details" disabled>Details</button>
+      </div>
+    </article>
+    {% endfor %}
+  </section>
+</div>
+
+<div class="mask" id="mask">
+  <div class="modal">
+    <button class="close" id="close">&times;</button>
+    <h2 id="m-title">Metric</h2>
+    <p class="sub" id="m-sub"></p>
+    <div id="m-body"></div>
+  </div>
+</div>
+
+<script>
+const $  = (s, r=document) => r.querySelector(s);
+const $$ = (s, r=document) => [...r.querySelectorAll(s)];
+const RESULTS = {};
+
+function fmt(n){ return n === null || n === undefined ? '–' : n.toFixed(3); }
+
+function visibleCards(){
+  return $$('.card').filter(c => !c.classList.contains('hide'));
+}
+
+function applyFilters(){
+  const cat = $('.chip.on').dataset.cat;
+  const target = $('#target').value;
+  $$('.card').forEach(c => {
+    const okCat = cat === 'all' || c.dataset.cat === cat;
+    const okTgt = target === 'all' || c.dataset.target === target;
+    c.classList.toggle('hide', !(okCat && okTgt));
+  });
+  tally();
+}
+
+function tally(){
+  const vis = visibleCards();
+  let p = 0, f = 0, n = 0;
+  vis.forEach(c => {
+    const r = RESULTS[c.dataset.key];
+    if (!r) n++;
+    else if (r.status === 'pass') p++;
+    else f++;
+  });
+  $('#n-pass').textContent = p;
+  $('#n-fail').textContent = f;
+  $('#n-pending').textContent = n;
+}
+
+function paint(card, r){
+  RESULTS[card.dataset.key] = r;
+  const badge = $('.badge', card), score = $('.score', card);
+  const bar = $('.bar .fill', card), reason = $('.reason', card), meta = $('.meta', card);
+
+  badge.className = 'badge ' + r.status;
+  badge.textContent = r.status.toUpperCase();
+  score.textContent = fmt(r.score);
+  score.className = 'score ' + r.status;
+  if (r.scale_hint) $('.hint', card).textContent = r.scale_hint;
+  const pct = r.score === null ? 0 : Math.max(0, Math.min(1, r.score)) * 100;
+  bar.style.width = pct + '%';
+  bar.className = 'fill ' + (r.status === 'pass' ? '' : 'fail');
+  reason.textContent = r.reason || '(no reason returned)';
+  meta.textContent = `${r.latency_ms} ms · ${r.cases_run}/${r.cases_total} cases`
+                   + (r.judge ? ` · ${r.judge}` : '');
+  const t = r.tokens;
+  $('.tok', card).textContent = t
+    ? `${t.total.toLocaleString()} tokens · target ${t.target.total.toLocaleString()}`
+      + ` · judge ${t.judge.total.toLocaleString()} · ${t.calls} calls`
+    : '—';
+  tokens();
+  $('.details', card).disabled = !(r.rows && r.rows.length);
+  tally();
+}
+
+async function runCard(card){
+  const btn = $('.run', card);
+  const old = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span> Running';
+  $('.badge', card).className = 'badge idle';
+  $('.badge', card).textContent = 'RUNNING';
+  $('.score', card).className = 'score';
+  try{
+    const res = await fetch('/api/run', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ key: card.dataset.key, sample: +$('#sample').value })
+    });
+    paint(card, await res.json());
+  }catch(e){
+    paint(card, {status:'error', score:null, reason:String(e),
+                 latency_ms:0, cases_run:0, cases_total:0, rows:[], judge:''});
+  }finally{
+    btn.disabled = false; btn.innerHTML = old;
+  }
+}
+
+$$('.chip').forEach(ch => ch.onclick = () => {
+  $$('.chip').forEach(c => c.classList.remove('on'));
+  ch.classList.add('on'); applyFilters();
+});
+$('#target').onchange = applyFilters;
+
+$$('.card').forEach(card => {
+  $('.run', card).onclick = () => runCard(card);
+  $('.details', card).onclick = () => openDetails(card);
+});
+
+$('#runall').onclick = async () => {
+  const btn = $('#runall');
+  btn.disabled = true;
+  const old = btn.innerHTML;
+  const cards = visibleCards();
+  for (let i = 0; i < cards.length; i++){
+    btn.innerHTML = `<span class="spin"></span> ${i+1}/${cards.length}`;
+    await runCard(cards[i]);          // serial: the judge is rate limited
+  }
+  btn.disabled = false; btn.innerHTML = old;
+};
+
+function openDetails(card){
+  const r = RESULTS[card.dataset.key];
+  if (!r) return;
+  $('#m-title').textContent = $('h3', card).textContent;
+  $('#m-sub').textContent =
+    `${r.cases_run} of ${r.cases_total} cases · threshold ≥ ${r.threshold} · ${r.latency_ms} ms`;
+  $('#m-body').innerHTML = r.rows.map(row => `
+    <div class="case">
+      <div class="h">
+        <span class="badge ${row.passed ? 'pass':'fail'}">${row.passed ? 'PASS':'FAIL'}</span>
+        <span class="score ${row.passed ? 'pass':'fail'}">${fmt(row.score)}</span>
+        <span class="vs">&ge; ${r.threshold.toFixed(2)}</span>
+        <span class="q">${escapeHtml(row.label)}</span>
+      </div>
+      <pre>${escapeHtml(row.actual_output || '(empty reply)')}</pre>
+      <p class="why">${escapeHtml(row.reason || '')}</p>
+    </div>`).join('') || '<p>No cases recorded.</p>';
+  $('#mask').classList.add('on');
+}
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, c =>
+    ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+$('#close').onclick = () => $('#mask').classList.remove('on');
+$('#mask').onclick = e => { if (e.target.id === 'mask') $('#mask').classList.remove('on'); };
+
+async function status(){
+  try{
+    const s = await (await fetch('/api/status')).json();
+    $('#dot-chatbot').className = 'dot ' + (s.chatbot.up ? 'up':'down');
+    $('#dot-rag').className     = 'dot ' + (s.rag.up ? 'up':'down');
+    $('#dot-judge').className   = 'dot ' + (s.judge.up ? 'up':'down');
+  }catch(e){}
+}
+async function tokens(){
+  try{
+    const t = await (await fetch('/api/tokens')).json();
+    $('#tok-total').textContent = `${t.total.toLocaleString()} total · ${t.calls} calls`;
+    $('#tok-split').textContent =
+      `target ${t.target.total.toLocaleString()} · judge ${t.judge.total.toLocaleString()}`;
+  }catch(e){}
+}
+$('#tok-reset').onclick = async () => {
+  await fetch('/api/tokens/reset', {method:'POST'});
+  tokens();
+};
+$('#refresh').onclick = () => { status(); tokens(); };
+status(); tokens(); applyFilters();
+</script>
+</body>
+</html>

@@ -1,0 +1,35 @@
+{% extends "_base.html" %}
+{% set active = 'search' %}
+{% block title %}Search · RAG Explorer{% endblock %}
+{% block content %}
+<section class="hero">
+  <h2>Vector search</h2>
+  <p class="lede">Embed a query with <code>nomic-embed-text</code>, then retrieve top-k semantically similar chunks from ChromaDB.</p>
+</section>
+
+<form class="search-form" method="get" action="/search">
+  <input type="text" name="q" value="{{ q }}" placeholder='Try: "what is your refund window?"' autofocus />
+  <input type="number" name="k" value="{{ k }}" min="1" max="10" />
+  <button class="btn" type="submit">Search</button>
+</form>
+
+{% if q %}
+  <h3>Top {{ hits|length }} results for: <em>"{{ q }}"</em></h3>
+  {% if hits %}
+    <div class="hits">
+      {% for h in hits %}
+      <article class="hit">
+        <header>
+          <span class="rank mono">#{{ loop.index }}</span>
+          <span class="src mono">{{ h.source }} <small>(chunk {{ h.metadata.index }})</small></span>
+          <span class="score mono">score {{ '%.3f'|format(h.score) }}</span>
+        </header>
+        <p>{{ h.text }}</p>
+      </article>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="muted">No matches. Did you ingest any documents yet?</p>
+  {% endif %}
+{% endif %}
+{% endblock %}

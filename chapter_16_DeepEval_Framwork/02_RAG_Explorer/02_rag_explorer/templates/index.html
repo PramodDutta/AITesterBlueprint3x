@@ -1,0 +1,70 @@
+{% extends "_base.html" %}
+{% set active = 'home' %}
+{% block title %}Dashboard · RAG Explorer{% endblock %}
+{% block content %}
+<section class="hero">
+  <h2>Pipeline status</h2>
+  <p class="lede">A complete local-first RAG pipeline: documents flow left-to-right; you can inspect every stage.</p>
+</section>
+
+<section class="pipeline">
+  <div class="stage">
+    <div class="stage-num">1</div>
+    <h3>Ingest</h3>
+    <p>Load <code>.md</code>, <code>.txt</code>, or <code>.pdf</code>; split into ~500-char chunks with overlap.</p>
+    <a class="btn" href="/ingest">Open</a>
+  </div>
+  <div class="arrow">→</div>
+  <div class="stage">
+    <div class="stage-num">2</div>
+    <h3>Embed</h3>
+    <p>Local Ollama <code>{{ embed.model }}</code> (768-dim).</p>
+    <span class="pill">{{ embed.host }}</span>
+  </div>
+  <div class="arrow">→</div>
+  <div class="stage">
+    <div class="stage-num">3</div>
+    <h3>Store</h3>
+    <p>ChromaDB persistent collection, cosine distance.</p>
+    <span class="pill">{{ stats.collection }}</span>
+  </div>
+  <div class="arrow">→</div>
+  <div class="stage">
+    <div class="stage-num">4</div>
+    <h3>Retrieve</h3>
+    <p>Top-k semantic search returns chunks with similarity scores.</p>
+    <a class="btn" href="/search">Open</a>
+  </div>
+  <div class="arrow">→</div>
+  <div class="stage">
+    <div class="stage-num">5</div>
+    <h3>Answer</h3>
+    <p>Groq LLM grounds its reply in retrieved chunks; cites sources.</p>
+    <a class="btn" href="/chat">Open</a>
+  </div>
+</section>
+
+<section class="grid-2">
+  <div class="card">
+    <h3>Vector store</h3>
+    <table class="kv">
+      <tr><th>Collection</th><td><code>{{ stats.collection }}</code></td></tr>
+      <tr><th>Total chunks</th><td>{{ stats.chunks }}</td></tr>
+      <tr><th>Distinct sources</th><td>{{ stats.sources|length }}</td></tr>
+      <tr><th>Groq configured</th><td>{% if groq_configured %}<span class="ok">yes</span>{% else %}<span class="warn">mock mode</span>{% endif %}</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h3>Sources</h3>
+    {% if stats.sources %}
+      <ul class="src-list">
+        {% for src, count in stats.sources.items() %}
+          <li><code>{{ src }}</code><span class="count">{{ count }} chunks</span></li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="muted">No documents ingested yet. Go to <a href="/ingest">Ingest</a> to add some.</p>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

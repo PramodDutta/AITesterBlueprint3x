@@ -233,7 +233,32 @@ mindmap
         Groq gpt-oss-120b as local model
         OpenAI, Ollama, LiteLLM
       deepeval CLI provider switch
-    Ch 16 - E2E AI QA Pipeline (blueprint)
+    Ch 16 - DeepEval Framework
+      Three subsystems
+        A - ShopSphere chatbot :8201
+        B - RAG Explorer :8202
+        C - the grader :8203
+      Two models, never one
+        qwen3.8-27b under test
+        gpt-oss-120b as judge
+      One catalogue, two front doors
+        metrics_catalog.py
+        pytest + dashboard share it
+      25 metric cards
+        Quality + retrieval
+        Safety + security
+        G-Eval rubrics
+        Conversational
+      27-prompt attack library
+        Direct injection
+        Jailbreak + obfuscation
+        Exfiltration
+        Social engineering
+        Out-of-domain misuse
+      Token accounting
+        Target vs judge split
+      289 pytest cases
+    Ch 17 - E2E AI QA Pipeline (blueprint)
       Jira JQL to test plan
       RAG test cases
       Playwright .md automation
@@ -563,7 +588,24 @@ mindmap
 │   ├── .deepeval/                 Provider config + run cache (gitignored)
 │   └── .env                       Judge model API key (gitignored)
 │
-├── chapter_16_E2E_QA_Pipeline/    End-to-end AI QA pipeline blueprint
+├── chapter_16_DeepEval_Framwork/  A judge model grading two live apps
+│   ├── prompts_deep_eval_framework.md   Every prompt that built it, in order
+│   ├── How_The_DeepEval_Framework_Works.html   Illustrated walkthrough
+│   ├── 01_Chatbot_Shopeasy_chatbot/     Subsystem A - the app under test (:8201)
+│   │   └── 01_chatbot/            FastAPI + Groq support bot, React UI
+│   ├── 02_RAG_Explorer/           Subsystem B - retrieval, exposed (:8202)
+│   │   └── 02_rag_explorer/       Flask/FastAPI + Chroma + Ollama embeddings
+│   └── 03_DeepFramework/          Subsystem C - the grader (:8203)
+│       ├── metrics_catalog.py     25 MetricSpecs; pytest and the dashboard
+│       │                          both import these, so thresholds cannot drift
+│       ├── llm_providers/judge.py gpt-oss-120b on Groq + rate-limit backoff
+│       ├── targers/               HTTP clients for subsystems A and B
+│       ├── datasets/              goldens, conversations, 27-prompt attack library
+│       ├── token_meter.py         target vs judge token split
+│       ├── tests/                 289 cases: 7 chatbot files, 12 RAG files, smoke
+│       └── dashboard/             the grid UI, one card per metric
+│
+├── chapter_17_E2E_QA_Pipeline/    End-to-end AI QA pipeline blueprint
 │   └── E2E_QA_Pipeline.md         8-step flow: Jira -> plan -> cases -> automation -> run -> RCA
 │
 └── Project_Job_TRACKERAI/         Local-first job application tracker
@@ -2559,9 +2601,81 @@ Run it with `pytest test_01_Anwser_Relevancy.py` or `deepeval test run test_01_A
 
 ---
 
-## Chapter 16 - End-to-End AI QA Pipeline (Blueprint)
+## Chapter 16 - The DeepEval Framework
 
-**Concept:** `chapter_16_E2E_QA_Pipeline/` is the blueprint that ties the whole course together — an AI pipeline that reads a Jira story and drives it all the way to executed automation and an analysed results dashboard, with a RAG pipeline supplying historical test plans and cases along the way.
+**Concept:** `chapter_16_DeepEval_Framwork/` turns chapter 15's single scored test into a real evaluation suite. Three subsystems: a support chatbot (A), a RAG pipeline (B), and the framework that grades both of them (C). 25 metric cards, 289 pytest cases, and a dashboard you can run in front of a room.
+
+**Why:** Chapter 14 explains why `assertEquals` breaks on generated text. Chapter 15 shows one metric working. This chapter answers the question that comes next: what does a *suite* look like, what do you measure, and how do you keep the dashboard and CI from disagreeing?
+
+**The two models, and why they are different:**
+
+| Role | Model | Reason |
+|---|---|---|
+| Under test | `qwen/qwen3.8-27b` | what the apps answer with |
+| Judge | `openai/gpt-oss-120b` | scores every metric |
+
+A judge grading its own sibling inflates the result: it recognises its own phrasing and rewards it. Different families keeps the numbers honest.
+
+**Q&A - the design decisions:**
+- **Q: Why one `metrics_catalog.py` instead of thresholds in each test?** A: pytest and the dashboard both import the same `MetricSpec`. If the dashboard held its own copy, the grid could show green while CI showed red, and the dashboard would quietly become decoration.
+- **Q: What is the difference between Faithfulness and Hallucination?** A: the field they read. Faithfulness scores against `retrieval_context` (the document the bot was handed); Hallucination scores against `context` (what is true). A bot can be perfectly faithful to a chunk it should never have retrieved.
+- **Q: Why is the attack library grouped by technique?** A: "the bot is unsafe" is not actionable. "It shrugs off roleplay jailbreaks but hands over its system prompt to a plain direct request" tells you what to fix.
+- **Q: Why does the dashboard show tokens?** A: because the judge usually costs about as much as the answer it grades, sometimes more. That ratio is the number people are surprised by when they first put an eval suite in CI.
+
+**The evaluation loop - every metric is these five steps:**
+
+```mermaid
+flowchart LR
+    G[1. Golden case<br/>input + expected + context] -->|ask| T[2. Target app<br/>qwen3.8-27b over HTTP]
+    T -->|reply| C[3. LLMTestCase]
+    C -->|grade| J[4. Judge<br/>gpt-oss-120b]
+    J --> V{5. score &ge; threshold?}
+    V -->|yes| P[PASS]
+    V -->|no| F[FAIL]
+```
+
+**Run it:**
+
+```bash
+# Subsystem A - the app under test
+cd chapter_16_DeepEval_Framwork/01_Chatbot_Shopeasy_chatbot/01_chatbot
+backend/venv/bin/python -m uvicorn app:app --app-dir backend --port 8201 --env-file .env
+
+# Subsystem B - retrieval (needs Ollama running with nomic-embed-text)
+cd ../../02_RAG_Explorer/02_rag_explorer
+venv/bin/python -m uvicorn app:app --port 8202 --env-file .env
+
+# Subsystem C - the dashboard
+cd ../../03_DeepFramework
+venv/bin/python -m uvicorn dashboard.app:app --port 8203 --env-file .env   # then open :8203
+venv/bin/python -m pytest -m safety                                        # or run it as a suite
+```
+
+**What it found on the first full run** (left red on purpose - tuning a threshold to make a demo pass defeats the demo):
+
+| Metric | Score | Finding |
+|---|---|---|
+| Domain Misuse | 0.00 | asked about chest pain and a numb arm, the bot gives medical advice; its system prompt says to redirect out-of-scope questions and that instruction does not hold |
+| Non-Advice | 0.00 | a second, independent metric agrees on the same reply |
+| Answer Relevancy | 0.50 | padded a refund answer with shipping detail nobody asked for |
+| Contextual Recall | 0.50 | retrieval missed part of what the reference answer needs |
+
+Security held: injection, jailbreak, obfuscation, social engineering and RAG exfiltration all scored 1.00.
+
+**Four ways the numbers lie** - each of these produced a confident, plausible, wrong result before it was caught:
+
+1. **The pass direction flipped in DeepEval 4.x.** Every metric is now `score >= threshold`, Bias and Toxicity and PII Leakage included, which scored the opposite way in 3.x. A high bias score means *clean*. Confirm from the installed source, not a tutorial.
+2. **A model id that returns 200 OK is not a model that answers.** Pointed at an injection classifier, the chatbot returned `'0.0003637653135228902'` with no error: a jailbreak probability, not a reply.
+3. **Read the judge's reason next to its score.** One rubric returned 0.1 while its own explanation said "refuses to reveal the system prompt, matching the criteria". A score that disagrees with its own reasoning is a wiring bug, not a finding.
+4. **Never write "Score 0 if..." inside a G-Eval step.** G-Eval derives a continuous score from the steps and score directives fight that mechanism. Describe what to look for, state the direction once at the end. That rewrite took the rubric above from 0.1 to 1.00.
+
+`prompts_deep_eval_framework.md` records every prompt that built this chapter, in order, with what each one produced. `How_The_DeepEval_Framework_Works.html` is the illustrated walkthrough.
+
+---
+
+## Chapter 17 - End-to-End AI QA Pipeline (Blueprint)
+
+**Concept:** `chapter_17_E2E_QA_Pipeline/` is the blueprint that ties the whole course together — an AI pipeline that reads a Jira story and drives it all the way to executed automation and an analysed results dashboard, with a RAG pipeline supplying historical test plans and cases along the way.
 
 **Why:** Each chapter builds one capability (prompts, agents, RAG, automation). This document shows how they compose into a single autonomous loop: from a Jira story to test plan, test cases, Playwright automation, execution, and root-cause analysis — no manual step in between.
 
@@ -2586,7 +2700,7 @@ flowchart TD
     AN --> DASH[Dashboard<br/>final reporting]
 ```
 
-Read `chapter_16_E2E_QA_Pipeline/E2E_QA_Pipeline.md` for the full step-by-step write-up.
+Read `chapter_17_E2E_QA_Pipeline/E2E_QA_Pipeline.md` for the full step-by-step write-up.
 
 ---
 
@@ -2661,7 +2775,7 @@ You can read it linearly (chapter 01 → 07) or jump straight to a project:
 - **"How do I write my first pytest tests?"** → `chapter_11_Python_Learning/ex_21_PyTest/` — start with `test_180.py`, then read `PyTest_Cheatsheet.md`.
 - **"I want an AI agent that writes P0 test cases from a requirement."** → `chapter_12_CrewAI/01_test_analyst_Agent.py` — CrewAI agent on Groq.
 - **"I want LangFlow up without remembering the docker run flags."** → `chapter_05_AI_Agents_LangFlow/langflow-up.sh` (and `langflow-down.sh` to stop).
-- **"I want the big picture — Jira story to executed automation."** → `chapter_16_E2E_QA_Pipeline/E2E_QA_Pipeline.md`.
+- **"I want the big picture — Jira story to executed automation."** → `chapter_17_E2E_QA_Pipeline/E2E_QA_Pipeline.md`.
 - **"I want an agent crew that triages a bug: severity, root cause, and the tests to add."** → `chapter_12_CrewAI/04_Build_QABugTriageCrew_Prod.py`.
 - **"I want the blueprint actually built - Jira ticket in, QA pack out."** → `chapter_13_CREW_AI_QA_Pipeline/` — Streamlit app, `streamlit run app.py`.
 - **"I want to see MCP with a REST fallback done properly."** → `chapter_13_CREW_AI_QA_Pipeline/src/jira_qa_crew/jira/gateway.py` — the provider choice is Python, never an agent decision.

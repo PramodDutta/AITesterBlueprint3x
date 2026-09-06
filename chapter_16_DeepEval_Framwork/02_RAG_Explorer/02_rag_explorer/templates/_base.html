@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>{% block title %}RAG Explorer{% endblock %}</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo">◆</span>
+      <div>
+        <h1>RAG Explorer</h1>
+        <p class="tagline">Ingest · Embed · Search · Answer · Evaluate</p>
+      </div>
+    </div>
+    <nav class="nav">
+      <a href="/" class="{% if active=='home' %}active{% endif %}">Dashboard</a>
+      <a href="/ingest" class="{% if active=='ingest' %}active{% endif %}">Ingest</a>
+      <a href="/search" class="{% if active=='search' %}active{% endif %}">Search</a>
+      <a href="/chat" class="{% if active=='chat' %}active{% endif %}">Chat</a>
+    </nav>
+    <div class="status">
+      <span class="badge mono">{{ stats.chunks if stats else 0 }} chunks</span>
+    </div>
+  </header>
+  <main class="container">
+    {% block content %}{% endblock %}
+  </main>
+  <footer class="footer">
+    <span>RAG Explorer · ChromaDB + Nomic Embed (Ollama) + Groq · Evaluated by DeepEval</span>
+  </footer>
+</body>
+</html>

@@ -28,9 +28,27 @@ env
 # Local browser verification artifacts
 .playwright-mcp/
 
-# Python virtualenvs (uv sync creates these per-chapter)
+# Python virtualenvs (uv sync creates these per-chapter).
+# Both spellings: chapters 15 and 16 use a bare `venv/`.
 .venv/
 **/.venv/
+venv/
+**/venv/
+
+# Node
+node_modules/
+**/node_modules/
+dist/
+**/dist/
+
+# Local vector stores (ChromaDB / Qdrant on-disk collections)
+**/chroma_db/
+**/qdrant_storage/
+
+# Backups of secret files - `.env` does not match `.env.bak.123`
+.env.bak*
+**/.env.bak*
+.env.local
 
 # Python bytecode
 __pycache__/
@@ -46,3 +64,7 @@ chapter_05_AI_Agents_LangFlow/chroma_backups/
 
 # pytest cache
 .pytest_cache/
+
+# RAG Explorer: files uploaded through the UI at runtime, not source.
+# Keeps personal documents (resumes, client test plans) out of the repo.
+chapter_16_DeepEval_Framwork/02_RAG_Explorer/02_rag_explorer/data/uploads/

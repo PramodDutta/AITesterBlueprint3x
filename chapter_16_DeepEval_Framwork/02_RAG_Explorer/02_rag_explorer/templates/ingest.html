@@ -1,0 +1,83 @@
+{% extends "_base.html" %}
+{% set active = 'ingest' %}
+{% block title %}Ingest · RAG Explorer{% endblock %}
+{% block content %}
+<section class="hero">
+  <h2>Ingest documents</h2>
+  <p class="lede">Seed from the bundled e-commerce knowledge base, or upload your own PDF/TXT/MD file. Chunks are visible below.</p>
+</section>
+
+<section class="grid-2">
+  <div class="card">
+    <h3>Seed bundled corpus</h3>
+    <p class="muted">From <code>{{ data_dir }}</code></p>
+    <ul class="src-list">
+      {% for f in available_files %}<li><code>{{ f }}</code></li>{% endfor %}
+    </ul>
+    <div class="row">
+      <button class="btn" onclick="seed(false)">Append</button>
+      <button class="btn ghost" onclick="seed(true)">Reset + Re-seed</button>
+    </div>
+    <pre id="seed-out" class="out"></pre>
+  </div>
+
+  <div class="card">
+    <h3>Upload file</h3>
+    <form id="upload-form" enctype="multipart/form-data">
+      <input type="file" name="file" accept=".pdf,.txt,.md" required />
+      <label class="check"><input type="checkbox" name="reset" /> reset collection first</label>
+      <button class="btn" type="submit">Upload + Chunk + Embed</button>
+    </form>
+    <pre id="upload-out" class="out"></pre>
+  </div>
+</section>
+
+<section>
+  <div class="row spread">
+    <h3>Chunks in collection ({{ chunks|length }})</h3>
+    <button class="btn ghost" onclick="resetAll()">Reset collection</button>
+  </div>
+  {% if chunks %}
+    <div class="chunks">
+      {% for c in chunks %}
+      <article class="chunk">
+        <header>
+          <span class="chunk-id mono">{{ c.id }}</span>
+          <span class="src mono">{{ c.source }}</span>
+          <span class="meta mono">chars {{ c.metadata.char_start }}–{{ c.metadata.char_end }}</span>
+        </header>
+        <p>{{ c.text }}</p>
+      </article>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="muted">Empty. Click "Append" above to seed the bundled corpus.</p>
+  {% endif %}
+</section>
+
+<script>
+async function seed(reset) {
+  const out = document.getElementById('seed-out');
+  out.textContent = 'Embedding…';
+  const r = await fetch('/api/ingest/seed?reset=' + reset, { method: 'POST' });
+  const d = await r.json();
+  out.textContent = JSON.stringify(d, null, 2);
+  setTimeout(() => location.reload(), 600);
+}
+async function resetAll() {
+  if (!confirm('Wipe all chunks?')) return;
+  await fetch('/api/ingest/reset', { method: 'POST' });
+  location.reload();
+}
+document.getElementById('upload-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const out = document.getElementById('upload-out');
+  out.textContent = 'Uploading + embedding…';
+  const fd = new FormData(e.target);
+  const r = await fetch('/api/ingest/upload', { method: 'POST', body: fd });
+  const d = await r.json();
+  out.textContent = JSON.stringify(d, null, 2);
+  setTimeout(() => location.reload(), 800);
+});
+</script>
+{% endblock %}
