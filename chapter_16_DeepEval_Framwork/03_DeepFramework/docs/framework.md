@@ -120,6 +120,23 @@ verbose metrics the judge costs more than the thing it is grading. That ratio
 is the number people are surprised by when they first put an eval suite in CI.
 The header shows the running total for the session, with a reset button.
 
+## Sharing it: the static showcase
+
+The live dashboard cannot be hosted. It calls `localhost:8201` and `:8202` and
+needs a Groq key server-side, which on a public URL is an open tab on your
+quota. So the shareable build is a recorded one:
+
+```bash
+venv/bin/python dashboard/snapshot/capture.py 1     # run all 25 cards, save results.json
+venv/bin/python dashboard/snapshot/build_static.py  # bake them into dist/index.html
+cd dashboard/snapshot && vercel deploy --prod       # ship it
+```
+
+Live at <https://deepeval-dashboard.vercel.app>. Every score, reason, latency
+and token count on it came from one real execution. Run buttons become a
+Recorded badge, because a static page cannot call a judge; the per-case
+Details drill-down still works from embedded data. No key ships with it.
+
 ## Layout
 
 ```

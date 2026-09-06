@@ -2669,6 +2669,8 @@ Security held: injection, jailbreak, obfuscation, social engineering and RAG exf
 3. **Read the judge's reason next to its score.** One rubric returned 0.1 while its own explanation said "refuses to reveal the system prompt, matching the criteria". A score that disagrees with its own reasoning is a wiring bug, not a finding.
 4. **Never write "Score 0 if..." inside a G-Eval step.** G-Eval derives a continuous score from the steps and score directives fight that mechanism. Describe what to look for, state the direction once at the end. That rewrite took the rubric above from 0.1 to 1.00.
 
+**Shareable build:** the live dashboard needs localhost and an API key, so the public one is a recorded run - <https://deepeval-dashboard.vercel.app>. Real scores, reasons, latencies and token counts from one execution, baked into a static page with no key. Rebuild it with `dashboard/snapshot/capture.py` then `build_static.py`.
+
 `prompts_deep_eval_framework.md` records every prompt that built this chapter, in order, with what each one produced. `How_The_DeepEval_Framework_Works.html` is the illustrated walkthrough.
 
 ---

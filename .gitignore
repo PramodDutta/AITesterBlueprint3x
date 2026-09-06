@@ -68,3 +68,7 @@ chapter_05_AI_Agents_LangFlow/chroma_backups/
 # RAG Explorer: files uploaded through the UI at runtime, not source.
 # Keeps personal documents (resumes, client test plans) out of the repo.
 chapter_16_DeepEval_Framwork/02_RAG_Explorer/02_rag_explorer/data/uploads/
+
+# Vercel
+.vercel/
+**/.vercel/
