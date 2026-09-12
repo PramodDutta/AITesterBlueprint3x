@@ -72,3 +72,7 @@ chapter_16_DeepEval_Framwork/02_RAG_Explorer/02_rag_explorer/data/uploads/
 # Vercel
 .vercel/
 **/.vercel/
+
+# Agent browser run artifacts
+screenshots/
+auth_state.json

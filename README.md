@@ -270,14 +270,20 @@ mindmap
     Ch 17 - LangChain Agents
       From builder to plain Python
         create_agent in one line
-        Groq vs Gemini providers
-      Four scripts, one idea each
-        001 - raw model call
-        002 - first agent
-        003 - streaming tokens
-        004 - system prompt
+        Groq, Gemini, DeepSeek
+      Ten scripts, one idea each
+        001-004 - model call to system prompt
+        005 - asyncio.gather concurrency
+        006-007 - custom tools
+        008 - Pydantic structured output
+        009-010 - browser agent
       Content blocks, not strings
         message.text over .content
+      playwright_tools.py
+        32 agent-safe tools
+        aria_snapshot to see the page
+        PASS/FAIL assertion tools
+        console + network diagnostics
       E2E AI QA Pipeline (blueprint)
         Jira JQL to test plan
         RAG test cases
@@ -629,12 +635,20 @@ mindmap
 │       └── dashboard/             the grid UI, one card per metric
 │
 ├── chapter_17_LangChain/          LangChain agents in plain Python
+│   ├── LangChain_Notes.html       Full study guide: 10 chapters + what actually broke
 │   ├── E2E_QA_Pipeline.md         8-step flow: Jira -> plan -> cases -> automation -> run -> RCA
 │   ├── src/chapters/
 │   │   ├── 001_Hello_LC.py        Raw model call - ChatGroq, no agent
 │   │   ├── 002_Hello_Gemini.py    First agent - create_agent + Gemini
 │   │   ├── 003_Hello_Gemini_Steam.py  Token streaming with stream_mode="messages"
-│   │   └── 004_SP.py              system_prompt - giving the agent a role
+│   │   ├── 004_SP.py              system_prompt - giving the agent a role
+│   │   ├── 005_Agent_Parallel_Vs_Sequential.py  asyncio.gather - 4 calls at once
+│   │   ├── 006_Tool.py            @tool - one calculator the agent may call
+│   │   ├── 007_MultiTool.py       Two tools - the model picks which to use
+│   │   ├── 008_Structure_output.py  response_format - Pydantic, no JSON parsing
+│   │   ├── 009_Playwright_Agent_Orch.py     Browser agent on Groq
+│   │   ├── 010_Playwright_Agent_Orch_Deepseek.py  Same agent on DeepSeek
+│   │   └── playwright_tools.py    32 agent-safe Playwright tools, 5 bundles
 │   └── .env                       GROQ + Google API keys, model ids (gitignored)
 │
 └── Project_Job_TRACKERAI/         Local-first job application tracker
@@ -2711,7 +2725,9 @@ The hosted dashboard is a *recorded* run, not a live one: the live version calls
 
 ## Chapter 17 - LangChain Agents (and the E2E Pipeline Blueprint)
 
-`chapter_17_LangChain/` is where the course stops building agents *inside* a tool and writes one in plain Python. Four short scripts walk from a bare model call to a configured agent, and `E2E_QA_Pipeline.md` in the same folder is the blueprint they build toward.
+`chapter_17_LangChain/` is where the course stops building agents *inside* a tool and writes one in plain Python. Ten short scripts walk from a bare model call to an agent that drives a real browser, and `E2E_QA_Pipeline.md` in the same folder is the blueprint they build toward.
+
+**Study guide:** `chapter_17_LangChain/LangChain_Notes.html` is the full written version of this chapter - every script on this page with its expected output, exercises, a TypeScript-to-Python reference, and a **What actually broke** section covering the six failures that cost real time (expired Gemini tokens, `DEEPSEEK_API` vs `DEEPSEEK_API_KEY`, `load_dotenv()` ordering, content blocks vs strings, and the Groq/DeepSeek tool-discipline gap). Open it in any browser, no server needed.
 
 ### The LangChain Lab (`src/chapters/`)
 
@@ -2737,7 +2753,7 @@ flowchart TD
     TOK --> TXT
 ```
 
-**The four scripts:**
+**The ten scripts - each one adds exactly one idea:**
 
 | Script | Adds | Key line |
 |:-------|:-----|:---------|
@@ -2745,6 +2761,12 @@ flowchart TD
 | `002_Hello_Gemini.py` | The first agent | `create_agent(model=os.environ["GEMINI_LLM_MODEL"])` |
 | `003_Hello_Gemini_Steam.py` | Token-by-token output | `agent.stream(..., stream_mode="messages")` |
 | `004_SP.py` | A role for the agent | `system_prompt="You are a helpful AI assistant..."` |
+| `005_Agent_Parallel_Vs_Sequential.py` | Concurrency | `await asyncio.gather(*[agent.ainvoke(...)])` |
+| `006_Tool.py` | One tool the agent may call | `@tool def calculator(expression: str)` |
+| `007_MultiTool.py` | Two tools, model picks | `tools=[search_tool, web_content_tool]` |
+| `008_Structure_output.py` | Typed output, no parsing | `response_format=TestCaseList` |
+| `009_Playwright_Agent_Orch.py` | A real browser, on Groq | `tools=PLAYWRIGHT_TOOLS` |
+| `010_..._Deepseek.py` | The same agent, on DeepSeek | `ChatDeepSeek(model="deepseek-chat")` |
 
 The whole of `002_Hello_Gemini.py` - this is the entire first agent:
 
@@ -2775,6 +2797,151 @@ cd chapter_17_LangChain/src
 python3 -m venv .venv && .venv/bin/pip install -U langchain langchain-google-genai langchain-groq python-dotenv
 .venv/bin/python chapters/002_Hello_Gemini.py
 ```
+
+### Tools, Concurrency and Typed Output (`005`-`008`)
+
+**Concept:** A tool is a plain Python function with `@tool` and a docstring. The docstring is not a comment - it is the description the model reads to decide whether to call the function, so it is part of the prompt.
+
+**Why:** A model on its own can only produce text. Tools are how it reaches a calculator, an API, a database or a browser, and `response_format` is how you get its answer back as a typed object instead of prose you have to parse.
+
+**Q&A - the four ideas:**
+- **Q: Why is `asyncio.gather` worth a whole script?** A: Four sequential `invoke()` calls wait for each other; `005` fires all four with `ainvoke` at once and finishes in roughly the time of the slowest one. Results come back in the order of the input list, not the order they completed.
+- **Q: How does the agent know which tool to use?** A: From the docstring and the type hints alone. In `006` the calculator is only called for the two maths questions - "What is the capital of India?" is answered directly with no tool call.
+- **Q: What does `response_format` actually buy me?** A: `result["structured_response"]` is a validated Pydantic object, so `tc.priority` is guaranteed to be `High`, `Medium` or `Low`. No `json.loads`, no "the model wrapped it in a code fence again".
+
+```mermaid
+flowchart TD
+    Q[User question] --> M[Model]
+    T1["@tool calculator<br/>docstring = the description"] -.registered.-> M
+    T2["@tool search_tool"] -.registered.-> M
+    M --> D{Need a tool?}
+    D -->|no| A[Answer directly]
+    D -->|yes| CALL[Tool call + args]
+    CALL --> EXEC[Python runs the function]
+    EXEC --> OBS[Result goes back as a tool message]
+    OBS --> M
+    A --> RF{response_format set?}
+    RF -->|no| TXT[Plain text reply]
+    RF -->|yes| PY["structured_response<br/>validated Pydantic object"]
+```
+
+**Code sample - a typed test-case generator (`008_Structure_output.py`):**
+
+```python
+from typing import Literal
+from pydantic import BaseModel
+from langchain.agents import create_agent
+
+class TestCase(BaseModel):
+    title: str
+    steps: list[str]
+    expected_result: str
+    priority: Literal["High", "Medium", "Low"]
+
+class TestCaseList(BaseModel):
+    # Always wrap a list inside an object - better provider compatibility.
+    test_cases: list[TestCase]
+
+agent = create_agent(
+    model="google_genai:gemini-flash-lite-latest",
+    system_prompt="You are a senior automation testing engineer.",
+    response_format=TestCaseList,
+)
+
+result = agent.invoke({"messages": [{"role": "user", "content":
+    "Generate 2 test cases for: a logged-in user adds items to their cart"}]})
+
+for tc in result["structured_response"].test_cases:   # already typed
+    print(tc.model_dump_json(indent=2))
+```
+
+> `006_Tool.py` deliberately does **not** use `eval()`. The one-line calculator every tutorial reaches for is arbitrary code execution driven by text a model wrote, so the tool walks the parsed `ast` instead: `__import__('os').system(...)` comes back as "only arithmetic is allowed" rather than running.
+
+---
+
+### The Browser Agent (`playwright_tools.py` + `009`/`010`)
+
+**Concept:** `playwright_tools.py` wraps Playwright 1.62 in **32 `@tool` functions** - launch, navigate, click, assert, screenshot - so an LLM can drive a real Chromium browser and report whether a test passed.
+
+**Why:** Chapters 02 and 13 generate test *code* a human still has to run. This closes the loop: the agent opens the browser, does the steps, checks the result and writes the report, from one English sentence.
+
+**Q&A - what makes a tool agent-safe:**
+- **Q: Why does every tool return a string instead of raising?** A: An agent cannot catch an exception - a raise ends the run. Returning `"Error: no element matches #login"` lets the model read the failure and try a different selector, which is exactly what recovery looks like.
+- **Q: How does the agent know what to click without seeing the page?** A: `snapshot_page` returns Playwright's `aria_snapshot` - the whole page as a role/name tree. The agent reads it, then uses `click_by_role("button", "Sign in")`. Guessing CSS selectors is the single biggest cause of failed browser agents.
+- **Q: Why bundles instead of one list of 32?** A: Tool-choice accuracy drops as the list grows. `CORE_TOOLS + ASSERTION_TOOLS` is 17 tools and enough for a login test; pass all 32 only when the task really needs uploads, mocking and drag-and-drop.
+
+```mermaid
+flowchart TD
+    TASK["TASK: test login on ttacart"] --> AG[Agent + PLAYWRIGHT_TOOLS]
+    AG --> L[launch_browser]
+    L --> N[navigate_to]
+    N --> SNAP["snapshot_page<br/>aria_snapshot = roles + names"]
+    SNAP --> ACT["type_by_label / click_by_role<br/>names taken from the snapshot"]
+    ACT --> ASSERT["assert_visible / assert_text_contains<br/>returns PASS or FAIL"]
+    ASSERT --> DIAG["get_console_errors<br/>get_failed_requests"]
+    DIAG --> SHOT[take_screenshot]
+    SHOT --> CLOSE[close_browser]
+    CLOSE --> REPORT[Agent writes the test report]
+    ACT -.selector wrong.-> ERR["Error string, not an exception"]
+    ERR -.agent retries.-> SNAP
+```
+
+**The 32 tools, in five bundles:**
+
+| Bundle | Tools | What it covers |
+|:---|:---|:---|
+| `CORE_TOOLS` | 12 | launch, navigate, snapshot, click/type by role and label, screenshot |
+| `INTERACTION_TOOLS` | 10 | dropdowns, checkboxes, upload, keys, hover, drag, waits |
+| `ASSERTION_TOOLS` | 5 | `assert_visible`, `assert_text_contains`, counts, attributes |
+| `DIAGNOSTIC_TOOLS` | 2 | console errors and failed network requests |
+| `ADVANCED_TOOLS` | 3 | viewport, `mock_api_response`, `save_login_state` |
+
+**Code sample - the agent that runs a login test end to end (`010`):**
+
+```python
+import asyncio, os
+from dotenv import load_dotenv
+from langchain.agents import create_agent
+from langchain_deepseek import ChatDeepSeek
+from playwright_tools import PLAYWRIGHT_TOOLS
+
+load_dotenv()
+# The .env names the key DEEPSEEK_API; the SDK looks for DEEPSEEK_API_KEY,
+# so it has to be passed explicitly. temperature=0: never sample a selector.
+llm = ChatDeepSeek(model="deepseek-chat", api_key=os.environ["DEEPSEEK_API"], temperature=0)
+
+TASK = """Test the login on https://app.thetestingacademy.com/playwright/ttacart/
+1. Launch the browser  2. Navigate to the login page
+3. Enter username "standard_user"  4. Enter password "tta_secret"
+5. Click login  6. Close the browser"""
+
+async def main():
+    agent = create_agent(model=llm, tools=PLAYWRIGHT_TOOLS, system_prompt=SYSTEM_PROMPT)
+    result = await agent.ainvoke({"messages": [{"role": "user", "content": TASK}]})
+    print(result["messages"][-1].text)
+
+asyncio.run(main())   # ainvoke, so Playwright's async API shares one event loop
+```
+
+**The same agent on two models, same tools, same prompt:**
+
+| Model | Outcome |
+|:---|:---|
+| `openai/gpt-oss-120b` (Groq) | Called `navigate_to` **before** `launch_browser` despite rule 1, got the error string back, launched, snapshotted a blank page, then gave up after 3 steps |
+| `deepseek-chat` | Followed the order, and went further than asked - verified the post-login URL and title, asserted `text=Products` was visible, screenshotted, closed cleanly. **PASSED** |
+
+That gap is the lesson: the tools were identical, so tool-call discipline is a property of the *model*, not of your prompt. It is also why every tool returns an error string - Groq's misstep was recoverable instead of fatal.
+
+**Run it:**
+
+```bash
+cd chapter_17_LangChain/src
+.venv/bin/pip install -U langchain langchain-deepseek langchain-groq playwright python-dotenv
+.venv/bin/playwright install chromium
+cd chapters && ../.venv/bin/python 010_Playwright_Agent_Orch_Deepseek.py
+```
+
+---
 
 ### The End-to-End Blueprint (`E2E_QA_Pipeline.md`)
 
@@ -2882,6 +3049,11 @@ You can read it linearly (chapter 01 → 07) or jump straight to a project:
 - **"I want to write a LangChain agent in plain Python, not a builder."** → `chapter_17_LangChain/src/chapters/002_Hello_Gemini.py` — a working agent in 12 lines.
 - **"Why is my Gemini response printing `[{'type': 'text', ...}]`?"** → `chapter_17_LangChain/src/chapters/002_Hello_Gemini.py` — use `message.text`, not `.content`.
 - **"I want the answer to stream in token by token."** → `chapter_17_LangChain/src/chapters/003_Hello_Gemini_Steam.py`.
+- **"I want the whole LangChain chapter as readable notes."** → `chapter_17_LangChain/LangChain_Notes.html` — open in a browser.
+- **"I want an AI agent that actually drives a browser and reports PASS/FAIL."** → `chapter_17_LangChain/src/chapters/010_Playwright_Agent_Orch_Deepseek.py` — 32 Playwright tools, one English sentence in, a test report out.
+- **"How do I write a tool an LLM can call?"** → `chapter_17_LangChain/src/chapters/006_Tool.py` — `@tool` plus a docstring the model reads.
+- **"I want test cases back as typed objects, not JSON I have to parse."** → `chapter_17_LangChain/src/chapters/008_Structure_output.py` — Pydantic `response_format`.
+- **"How do I run 4 agent calls at once instead of waiting for each?"** → `chapter_17_LangChain/src/chapters/005_Agent_Parallel_Vs_Sequential.py` — `asyncio.gather`.
 - **"I want an agent crew that triages a bug: severity, root cause, and the tests to add."** → `chapter_12_CrewAI/04_Build_QABugTriageCrew_Prod.py`.
 - **"I want the blueprint actually built - Jira ticket in, QA pack out."** → `chapter_13_CREW_AI_QA_Pipeline/` — Streamlit app, `streamlit run app.py`.
 - **"I want to see MCP with a REST fallback done properly."** → `chapter_13_CREW_AI_QA_Pipeline/src/jira_qa_crew/jira/gateway.py` — the provider choice is Python, never an agent decision.
@@ -2914,7 +3086,7 @@ You can read it linearly (chapter 01 → 07) or jump straight to a project:
 - For Chapter 11 `ex_21_PyTest`: **pytest** (`python3 -m pip install pytest`). Everything else in the folder is stdlib-only.
 - For Chapter 12 CrewAI: **Python 3.10+**, `python3 -m pip install crewai python-dotenv`, and a `GROQ_API_KEY` in `chapter_12_CrewAI/.env` (free tier works). The model id `openai/gpt-oss-120b` must match your Groq console.
 - For Chapter 15 DeepEval: **Python 3.11+**, a venv, and `pip install -U deepeval requests`. Needs an API key for whichever judge model you configure — `OPENAI_API_KEY`, or a Groq key registered with `deepeval set-local-model`. Every metric assertion is a paid LLM call.
-- For Chapter 17 LangChain: **Python 3.11+** and a venv, then `pip install -U langchain langchain-google-genai langchain-groq python-dotenv` (LangChain **1.x** - `create_agent` does not exist in 0.3). Needs `GROQ_API_KEY` + `LLM_MODEL` for `001`, and `GOOGLE_API_KEY` + `GEMINI_LLM_MODEL` for `002`-`004`, in `chapter_17_LangChain/.env` (gitignored).
+- For Chapter 17 LangChain: **Python 3.11+** and a venv, then `pip install -U langchain langchain-google-genai langchain-groq langchain-deepseek playwright python-dotenv` plus `playwright install chromium` for `009`/`010` (LangChain **1.x** - `create_agent` does not exist in 0.3; Playwright **1.62**, the current release). Needs `GROQ_API_KEY` + `LLM_MODEL` for `001`, and `GOOGLE_API_KEY` + `GEMINI_LLM_MODEL` for `002`-`008`, and `DEEPSEEK_API` for `010`, in `chapter_17_LangChain/.env` (gitignored).
 - For Job Tracker AI: **Node.js 20.19+ or 22.12+** and npm for Vite 8.
 
 ## Chapter History
