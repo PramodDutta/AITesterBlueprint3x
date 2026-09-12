@@ -267,12 +267,23 @@ mindmap
       Token accounting
         Target vs judge split
       289 pytest cases
-    Ch 17 - E2E AI QA Pipeline (blueprint)
-      Jira JQL to test plan
-      RAG test cases
-      Playwright .md automation
-      Browser Bash execution
-      Flakiness + RCA + dashboard
+    Ch 17 - LangChain Agents
+      From builder to plain Python
+        create_agent in one line
+        Groq vs Gemini providers
+      Four scripts, one idea each
+        001 - raw model call
+        002 - first agent
+        003 - streaming tokens
+        004 - system prompt
+      Content blocks, not strings
+        message.text over .content
+      E2E AI QA Pipeline (blueprint)
+        Jira JQL to test plan
+        RAG test cases
+        Playwright .md automation
+        Browser Bash execution
+        Flakiness + RCA + dashboard
     Project - Job Tracker AI
       Local-first React Kanban board
       IndexedDB persistence
@@ -617,8 +628,14 @@ mindmap
 │       ├── tests/                 289 cases: 7 chatbot files, 12 RAG files, smoke
 │       └── dashboard/             the grid UI, one card per metric
 │
-├── chapter_17_E2E_QA_Pipeline/    End-to-end AI QA pipeline blueprint
-│   └── E2E_QA_Pipeline.md         8-step flow: Jira -> plan -> cases -> automation -> run -> RCA
+├── chapter_17_LangChain/          LangChain agents in plain Python
+│   ├── E2E_QA_Pipeline.md         8-step flow: Jira -> plan -> cases -> automation -> run -> RCA
+│   ├── src/chapters/
+│   │   ├── 001_Hello_LC.py        Raw model call - ChatGroq, no agent
+│   │   ├── 002_Hello_Gemini.py    First agent - create_agent + Gemini
+│   │   ├── 003_Hello_Gemini_Steam.py  Token streaming with stream_mode="messages"
+│   │   └── 004_SP.py              system_prompt - giving the agent a role
+│   └── .env                       GROQ + Google API keys, model ids (gitignored)
 │
 └── Project_Job_TRACKERAI/         Local-first job application tracker
     ├── README.md
@@ -2692,9 +2709,76 @@ The hosted dashboard is a *recorded* run, not a live one: the live version calls
 
 ---
 
-## Chapter 17 - End-to-End AI QA Pipeline (Blueprint)
+## Chapter 17 - LangChain Agents (and the E2E Pipeline Blueprint)
 
-**Concept:** `chapter_17_E2E_QA_Pipeline/` is the blueprint that ties the whole course together — an AI pipeline that reads a Jira story and drives it all the way to executed automation and an analysed results dashboard, with a RAG pipeline supplying historical test plans and cases along the way.
+`chapter_17_LangChain/` is where the course stops building agents *inside* a tool and writes one in plain Python. Four short scripts walk from a bare model call to a configured agent, and `E2E_QA_Pipeline.md` in the same folder is the blueprint they build toward.
+
+### The LangChain Lab (`src/chapters/`)
+
+**Concept:** LangChain v1's `create_agent()` returns a ready-to-run agent from a single argument - a provider-prefixed model id like `google_genai:gemini-flash-lite-latest` - which you then drive with `.invoke()` or `.stream()`.
+
+**Why:** Chapters 04, 05 and 12 built agents inside n8n, LangFlow and CrewAI. Every builder eventually hits something it will not do; this chapter is the smallest possible drop down to code, so the escape hatch is familiar before you need it.
+
+**Q&A - raw model call vs agent:**
+- **Q: When do I need `create_agent` instead of `llm.invoke()`?** A: The moment you want tools, a system prompt, or multi-turn state. `001_Hello_LC.py` is the raw call and returns a string; everything from `002` on is an agent and returns a message list.
+- **Q: Why does printing the response give me `[{'type': 'text', ...}]` instead of text?** A: Gemini returns a list of content blocks, not a string. Read `message.text` (a property in langchain-core 1.x) rather than `message.content`, and the signature/extras noise disappears.
+- **Q: How do I show tokens as they arrive?** A: `agent.stream(..., stream_mode="messages")` yields `(token, metadata)` pairs - print `token.text` with `end=""`. See `003_Hello_Gemini_Steam.py`.
+
+```mermaid
+flowchart TD
+    ENV[".env<br/>GEMINI_LLM_MODEL + GOOGLE_API_KEY"] --> CA["create_agent&#40;model&#41;"]
+    SP["system_prompt<br/>optional role"] -.-> CA
+    CA --> AG[Agent]
+    AG -->|invoke| RES["result messages list"]
+    AG -->|stream| TOK["token + metadata pairs"]
+    RES --> LAST["messages&#91;-1&#93;"]
+    LAST --> TXT[".text<br/>plain string"]
+    LAST -.->|.content| BLK["raw content blocks<br/>type + text + extras"]
+    TOK --> TXT
+```
+
+**The four scripts:**
+
+| Script | Adds | Key line |
+|:-------|:-----|:---------|
+| `001_Hello_LC.py` | Nothing - a bare model call | `ChatGroq(...).invoke(query)` |
+| `002_Hello_Gemini.py` | The first agent | `create_agent(model=os.environ["GEMINI_LLM_MODEL"])` |
+| `003_Hello_Gemini_Steam.py` | Token-by-token output | `agent.stream(..., stream_mode="messages")` |
+| `004_SP.py` | A role for the agent | `system_prompt="You are a helpful AI assistant..."` |
+
+The whole of `002_Hello_Gemini.py` - this is the entire first agent:
+
+```python
+import os
+
+from dotenv import load_dotenv
+from langchain.agents import create_agent
+
+load_dotenv()
+
+def main():
+    agent = create_agent(model=os.environ["GEMINI_LLM_MODEL"])
+    query = input("Ask your question: ")
+    result = agent.invoke({"messages": [("user", query)]})
+    print(result["messages"][-1].text)
+
+if __name__ == "__main__":
+    main()
+```
+
+Two details worth stealing: `os.environ[...]` fails with a named `KeyError` when the model id is missing, instead of passing `None` into LangChain and getting a confusing error three frames deep; and `("user", query)` is the short form of `{"role": "user", "content": query}`, expanded by LangGraph's `add_messages` reducer.
+
+Run it:
+
+```bash
+cd chapter_17_LangChain/src
+python3 -m venv .venv && .venv/bin/pip install -U langchain langchain-google-genai langchain-groq python-dotenv
+.venv/bin/python chapters/002_Hello_Gemini.py
+```
+
+### The End-to-End Blueprint (`E2E_QA_Pipeline.md`)
+
+**Concept:** `E2E_QA_Pipeline.md` is the blueprint that ties the whole course together — an AI pipeline that reads a Jira story and drives it all the way to executed automation and an analysed results dashboard, with a RAG pipeline supplying historical test plans and cases along the way.
 
 **Why:** Each chapter builds one capability (prompts, agents, RAG, automation). This document shows how they compose into a single autonomous loop: from a Jira story to test plan, test cases, Playwright automation, execution, and root-cause analysis — no manual step in between.
 
@@ -2719,7 +2803,7 @@ flowchart TD
     AN --> DASH[Dashboard<br/>final reporting]
 ```
 
-Read `chapter_17_E2E_QA_Pipeline/E2E_QA_Pipeline.md` for the full step-by-step write-up.
+Read `chapter_17_LangChain/E2E_QA_Pipeline.md` for the full step-by-step write-up.
 
 ---
 
@@ -2794,7 +2878,10 @@ You can read it linearly (chapter 01 → 07) or jump straight to a project:
 - **"How do I write my first pytest tests?"** → `chapter_11_Python_Learning/ex_21_PyTest/` — start with `test_180.py`, then read `PyTest_Cheatsheet.md`.
 - **"I want an AI agent that writes P0 test cases from a requirement."** → `chapter_12_CrewAI/01_test_analyst_Agent.py` — CrewAI agent on Groq.
 - **"I want LangFlow up without remembering the docker run flags."** → `chapter_05_AI_Agents_LangFlow/langflow-up.sh` (and `langflow-down.sh` to stop).
-- **"I want the big picture — Jira story to executed automation."** → `chapter_17_E2E_QA_Pipeline/E2E_QA_Pipeline.md`.
+- **"I want the big picture — Jira story to executed automation."** → `chapter_17_LangChain/E2E_QA_Pipeline.md`.
+- **"I want to write a LangChain agent in plain Python, not a builder."** → `chapter_17_LangChain/src/chapters/002_Hello_Gemini.py` — a working agent in 12 lines.
+- **"Why is my Gemini response printing `[{'type': 'text', ...}]`?"** → `chapter_17_LangChain/src/chapters/002_Hello_Gemini.py` — use `message.text`, not `.content`.
+- **"I want the answer to stream in token by token."** → `chapter_17_LangChain/src/chapters/003_Hello_Gemini_Steam.py`.
 - **"I want an agent crew that triages a bug: severity, root cause, and the tests to add."** → `chapter_12_CrewAI/04_Build_QABugTriageCrew_Prod.py`.
 - **"I want the blueprint actually built - Jira ticket in, QA pack out."** → `chapter_13_CREW_AI_QA_Pipeline/` — Streamlit app, `streamlit run app.py`.
 - **"I want to see MCP with a REST fallback done properly."** → `chapter_13_CREW_AI_QA_Pipeline/src/jira_qa_crew/jira/gateway.py` — the provider choice is Python, never an agent decision.
@@ -2827,6 +2914,7 @@ You can read it linearly (chapter 01 → 07) or jump straight to a project:
 - For Chapter 11 `ex_21_PyTest`: **pytest** (`python3 -m pip install pytest`). Everything else in the folder is stdlib-only.
 - For Chapter 12 CrewAI: **Python 3.10+**, `python3 -m pip install crewai python-dotenv`, and a `GROQ_API_KEY` in `chapter_12_CrewAI/.env` (free tier works). The model id `openai/gpt-oss-120b` must match your Groq console.
 - For Chapter 15 DeepEval: **Python 3.11+**, a venv, and `pip install -U deepeval requests`. Needs an API key for whichever judge model you configure — `OPENAI_API_KEY`, or a Groq key registered with `deepeval set-local-model`. Every metric assertion is a paid LLM call.
+- For Chapter 17 LangChain: **Python 3.11+** and a venv, then `pip install -U langchain langchain-google-genai langchain-groq python-dotenv` (LangChain **1.x** - `create_agent` does not exist in 0.3). Needs `GROQ_API_KEY` + `LLM_MODEL` for `001`, and `GOOGLE_API_KEY` + `GEMINI_LLM_MODEL` for `002`-`004`, in `chapter_17_LangChain/.env` (gitignored).
 - For Job Tracker AI: **Node.js 20.19+ or 22.12+** and npm for Vite 8.
 
 ## Chapter History
