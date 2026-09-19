@@ -271,12 +271,20 @@ mindmap
       From builder to plain Python
         create_agent in one line
         Groq, Gemini, DeepSeek
-      Ten scripts, one idea each
+      Thirteen scripts, one idea each
         001-004 - model call to system prompt
         005 - asyncio.gather concurrency
         006-007 - custom tools
         008 - Pydantic structured output
-        009-010 - browser agent
+        009-011 - browser agent, full E2E
+        012 - Jira ticket to browser run
+        013 - the whole QA pipeline
+      Local RAG over the test library
+        20 TTACart cases, valid + invalid
+        fastembed, no server, no key
+        duplicate detection in the schema
+      Dummy Slack MCP
+        reporter agent posts the verdict
       Content blocks, not strings
         message.text over .content
       playwright_tools.py
@@ -648,7 +656,14 @@ mindmap
 │   │   ├── 008_Structure_output.py  response_format - Pydantic, no JSON parsing
 │   │   ├── 009_Playwright_Agent_Orch.py     Browser agent on Groq
 │   │   ├── 010_Playwright_Agent_Orch_Deepseek.py  Same agent on DeepSeek
-│   │   └── playwright_tools.py    32 agent-safe Playwright tools, 5 bundles
+│   │   ├── 011_FULL_E2E_..._Deepseek.py     Full checkout E2E, order verified
+│   │   ├── 012_Fetch_JIRA_QA_Orch.py        Jira -> plan -> browser, 2 human gates
+│   │   ├── 013_FULL_E2E_..._Local_RAG_...py The whole pipeline, 6 stages
+│   │   ├── playwright_tools.py    32 agent-safe Playwright tools, 5 bundles
+│   │   ├── tta_rag.py             Local RAG: fastembed + cached numpy index
+│   │   ├── slack_tools.py         DUMMY Slack MCP - prints, never sends
+│   │   ├── rag_corpus/            20 TTACart test cases, valid and invalid
+│   │   └── fixtures/              Offline Jira tickets for when the token expires
 │   └── .env                       GROQ + Google API keys, model ids (gitignored)
 │
 └── Project_Job_TRACKERAI/         Local-first job application tracker
@@ -2766,7 +2781,10 @@ flowchart TD
 | `007_MultiTool.py` | Two tools, model picks | `tools=[search_tool, web_content_tool]` |
 | `008_Structure_output.py` | Typed output, no parsing | `response_format=TestCaseList` |
 | `009_Playwright_Agent_Orch.py` | A real browser, on Groq | `tools=PLAYWRIGHT_TOOLS` |
-| `010_..._Deepseek.py` | The same agent, on DeepSeek | `ChatDeepSeek(model="deepseek-chat")` |
+| `010_..._Deepseek.py` | The same agent, on DeepSeek | `ChatDeepSeek(model="deepseek-flash")` |
+| `011_FULL_E2E_..._Deepseek.py` | A whole purchase journey | 11 steps, order confirmed |
+| `012_Fetch_JIRA_QA_Orch.py` | A Jira ticket as the input | `fetch_jira_issue("VWO-49")` |
+| `013_FULL_E2E_..._Local_RAG_...py` | RAG + Slack, the full loop | `TestCaseRAG().search(...)` |
 
 The whole of `002_Hello_Gemini.py` - this is the entire first agent:
 
@@ -2943,6 +2961,77 @@ cd chapters && ../.venv/bin/python 010_Playwright_Agent_Orch_Deepseek.py
 
 ---
 
+### The Full QA Pipeline (`012`, `013` + `tta_rag.py` + `slack_tools.py`)
+
+**Concept:** `013` is the blueprint from `E2E_QA_Pipeline.md` actually wired up: a Jira ticket goes in, a local RAG finds the test cases the team already has, an agent writes a plan grounded in both, a second agent runs it in a real browser, and a third posts the verdict over a (dummy) Slack MCP.
+
+**Why:** Chapters 09-11 drive a browser from a task *you* typed. Real QA does not start with a task, it starts with a ticket and a test library that already covers half of it. This closes that loop and refuses to re-write cases that already exist.
+
+**Q&A - the three decisions that matter:**
+- **Q: Why is retrieval done in Python instead of given to the agent as a tool?** A: Same reason chapter 13 chose a Python `JiraGateway`: which documents ground the plan is a reliability decision, not a reasoning one. Deterministic retrieval means the same ticket always sees the same library context, and you can diff it.
+- **Q: Why a numpy array instead of a vector database?** A: The corpus is 20 test cases. `fastembed` (ONNX, no torch) embeds them once, caches to a `.npz` keyed by a corpus hash, and search is a dot product over 20 rows. Swap the body of `search()` for a Qdrant call when it outgrows memory; the interface does not change.
+- **Q: What stops the planner quietly duplicating existing cases?** A: The schema will not let it. Every case must declare `rag_relation` (`duplicate` / `extends` / `new`) and list `related_existing_ids`, so overlap is stated rather than hidden. On VWO-114 it self-reported `TC-001 -> TTA-002`, `TC-004 -> TTA-003`, `TC-005 -> TTA-004`.
+
+```mermaid
+flowchart TD
+    J["1. Jira REST v3<br/>VWO-114"] -->|offline fallback| FX[fixtures/VWO-114.json]
+    J --> Q[Ticket summary + description]
+    FX --> Q
+    Q --> R["2. Local RAG<br/>fastembed, 20 cases"]
+    R --> HITS["Top-k similar cases<br/>TTA-002 0.746, TTA-007 0.807"]
+    Q --> P["3. Planner agent - Groq<br/>response_format=TestPlan"]
+    HITS --> P
+    P --> PLAN["Typed plan<br/>rag_relation + coverage_gap"]
+    PLAN --> GATE{"human gate<br/>run in a REAL browser?"}
+    GATE -->|no| STOP[stop]
+    GATE -->|yes| EX["4. Executor agent - DeepSeek<br/>32 Playwright tools"]
+    EX --> REP[PASS/FAIL report]
+    REP --> SL["5. Reporter agent<br/>DUMMY Slack MCP"]
+    SL --> OUT["printed, never sent"]
+```
+
+**Code sample - the RAG is this small:**
+
+```python
+class TestCaseRAG:
+    def __init__(self, corpus_path=CORPUS_PATH):
+        self.cases = json.loads(corpus_path.read_text())
+        self.docs = [_document(c) for c in self.cases]
+        self._try_load_vectors()          # cached .npz, rebuilt when the corpus hash changes
+
+    def search(self, query: str, k: int = 5) -> list[tuple[float, dict]]:
+        """The k most similar test cases as (score, case), best first."""
+        q = np.array(next(iter(TextEmbedding(MODEL_NAME).embed([query]))), dtype="float32")
+        q /= np.linalg.norm(q)            # vectors are already unit -> dot == cosine
+        scores = self._vectors @ q
+        return [(float(scores[i]), self.cases[i]) for i in np.argsort(-scores)[:k]]
+```
+
+**Run it:**
+
+```bash
+cd chapter_17_LangChain/src/chapters
+../.venv/bin/pip install -U fastembed              # ONNX, no torch, ~160MB
+../.venv/bin/python tta_rag.py                     # see retrieval on its own
+../.venv/bin/python 013_FULL_E2E_Fetch_JIRA_Local_RAG_QA_Orch.py VWO-114
+
+#   --dry-run  stop after the plan, no browser
+#   --no-rag   skip retrieval, to see what grounding is actually worth
+#   --yes      skip both human gates (CI)
+```
+
+**What it found on a real run of VWO-114**, unprompted and correct:
+
+| Finding | Detail |
+|:---|:---|
+| Wrong error wording | The app says `Epic sadface: Username and password do not match any user in this service`, not the "Invalid credentials" the ticket specifies |
+| Whitespace accepted | `" standard_user "` with leading spaces logs in - the app trims it. The agent re-confirmed with a raw keyboard space before reporting, to rule out a tool artifact |
+| Coverage gap | "the library asserts generic error alerts but never the exact wording this ticket specifies" |
+
+**Two honest caveats.** Runs are **not reproducible** even at `temperature=0`: two runs of VWO-114 produced 6 cases all-PASS and 7 cases 2-PASS/5-FAIL, differing on how strictly they read the ticket's expected wording. Pin a generated plan and re-run *that* if it ever gates a build. And `VWO-49` yields **0 automatable cases** against TTACart, correctly, because SSO and Passkey do not exist there - which is what `automatable=false` plus `reason_if_not` is for.
+
+---
+
 ### The End-to-End Blueprint (`E2E_QA_Pipeline.md`)
 
 **Concept:** `E2E_QA_Pipeline.md` is the blueprint that ties the whole course together — an AI pipeline that reads a Jira story and drives it all the way to executed automation and an analysed results dashboard, with a RAG pipeline supplying historical test plans and cases along the way.
@@ -3050,6 +3139,9 @@ You can read it linearly (chapter 01 → 07) or jump straight to a project:
 - **"Why is my Gemini response printing `[{'type': 'text', ...}]`?"** → `chapter_17_LangChain/src/chapters/002_Hello_Gemini.py` — use `message.text`, not `.content`.
 - **"I want the answer to stream in token by token."** → `chapter_17_LangChain/src/chapters/003_Hello_Gemini_Steam.py`.
 - **"I want the whole LangChain chapter as readable notes."** → `chapter_17_LangChain/LangChain_Notes.html` — open in a browser.
+- **"I want a Jira ticket to become a plan, a browser run and a Slack post."** → `chapter_17_LangChain/src/chapters/013_FULL_E2E_Fetch_JIRA_Local_RAG_QA_Orch.py` — six stages, two human gates.
+- **"I want a RAG that spots duplicate test cases before I write new ones."** → `chapter_17_LangChain/src/chapters/tta_rag.py` — 20 cases, fastembed, no server.
+- **"I want to see an MCP integration stubbed before the credentials exist."** → `chapter_17_LangChain/src/chapters/slack_tools.py` — prints the payload, never sends.
 - **"I want an AI agent that actually drives a browser and reports PASS/FAIL."** → `chapter_17_LangChain/src/chapters/010_Playwright_Agent_Orch_Deepseek.py` — 32 Playwright tools, one English sentence in, a test report out.
 - **"How do I write a tool an LLM can call?"** → `chapter_17_LangChain/src/chapters/006_Tool.py` — `@tool` plus a docstring the model reads.
 - **"I want test cases back as typed objects, not JSON I have to parse."** → `chapter_17_LangChain/src/chapters/008_Structure_output.py` — Pydantic `response_format`.
@@ -3086,7 +3178,7 @@ You can read it linearly (chapter 01 → 07) or jump straight to a project:
 - For Chapter 11 `ex_21_PyTest`: **pytest** (`python3 -m pip install pytest`). Everything else in the folder is stdlib-only.
 - For Chapter 12 CrewAI: **Python 3.10+**, `python3 -m pip install crewai python-dotenv`, and a `GROQ_API_KEY` in `chapter_12_CrewAI/.env` (free tier works). The model id `openai/gpt-oss-120b` must match your Groq console.
 - For Chapter 15 DeepEval: **Python 3.11+**, a venv, and `pip install -U deepeval requests`. Needs an API key for whichever judge model you configure — `OPENAI_API_KEY`, or a Groq key registered with `deepeval set-local-model`. Every metric assertion is a paid LLM call.
-- For Chapter 17 LangChain: **Python 3.11+** and a venv, then `pip install -U langchain langchain-google-genai langchain-groq langchain-deepseek playwright python-dotenv` plus `playwright install chromium` for `009`/`010` (LangChain **1.x** - `create_agent` does not exist in 0.3; Playwright **1.62**, the current release). Needs `GROQ_API_KEY` + `LLM_MODEL` for `001`, and `GOOGLE_API_KEY` + `GEMINI_LLM_MODEL` for `002`-`008`, and `DEEPSEEK_API` for `010`, in `chapter_17_LangChain/.env` (gitignored).
+- For Chapter 17 LangChain: **Python 3.11+** and a venv, then `pip install -U langchain langchain-google-genai langchain-groq langchain-deepseek playwright python-dotenv` plus `playwright install chromium` for `009`/`010` (LangChain **1.x** - `create_agent` does not exist in 0.3; Playwright **1.62**, the current release). Needs `GROQ_API_KEY` + `LLM_MODEL` for `001`, and `GOOGLE_API_KEY` + `GEMINI_LLM_MODEL` for `002`-`008`, and `DEEPSEEK_API` for `010`-`013`, in `chapter_17_LangChain/.env` (gitignored). `013` also wants `fastembed` (`pip install -U fastembed`) and reads Jira credentials from `chapter_13_CREW_AI_QA_Pipeline/.env`, falling back to `fixtures/<KEY>.json` when the token has expired.
 - For Job Tracker AI: **Node.js 20.19+ or 22.12+** and npm for Vite 8.
 
 ## Chapter History

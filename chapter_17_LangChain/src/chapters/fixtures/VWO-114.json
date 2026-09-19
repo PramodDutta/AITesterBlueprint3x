@@ -1,0 +1,8 @@
+{
+  "key": "VWO-114",
+  "summary": "Login: 'Invalid credentials' error message not appearing/working",
+  "description": "Reported issue: The 'invalid credentials' error handling on the login flow is not working.\n\nReporter notes: When entering incorrect login details, the expected \"Invalid credentials\"\nerror message does not appear (or is not functioning as expected).\n\nSteps to reproduce (generic):\n1. Navigate to the login page.\n2. Enter an incorrect username and/or password.\n3. Click the Login button.\n4. Observe that no \"Invalid credentials\" error message appears (or there is unexpected behavior).\n\nExpected result:\n* The system should display a clear \"Invalid credentials\" error message and prevent access.\n\nActual result:\n* No error message (or incorrect handling) occurs; user is not informed of invalid credentials.\n\nImpact:\n* Users may be unable to tell when their credentials are incorrect, causing login confusion\n  and potential access/security issues.\n\nPlease assign to the authentication/login team to investigate.",
+  "status": "To Do",
+  "issuetype": "Bug",
+  "priority": "Medium"
+}
