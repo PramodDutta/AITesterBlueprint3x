@@ -1,0 +1,15 @@
+TEST                             BUILD 1  BUILD 2  VERDICT
+----------------------------------------------------------------
+test_login_valid                 passed   passed   STABLE
+test_login_invalid_message       passed   passed   STABLE
+test_products_count              passed   passed   STABLE
+test_sort_price_low_high         passed   passed   STABLE
+test_add_to_cart                 passed   passed   STABLE
+test_cart_badge                  passed   passed   STABLE
+test_remove_from_cart            passed   passed   STABLE
+test_checkout_form_validation    passed   passed   STABLE
+test_checkout_tax_total          passed   failed   FLAKY
+test_sso_login_button            failed   failed   BROKEN
+
+8 stable, 1 flaky, 1 broken
+test_checkout_tax_total passed on rerun 3 -> FLAKY, not broken

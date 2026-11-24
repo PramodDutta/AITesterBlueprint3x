@@ -672,8 +672,12 @@ mindmap
 │       ├── 002_Linear_Pipeline.py setup -> execute -> teardown
 │       ├── 003_Conditional_Edge.py  A router that picks the next node
 │       ├── 004_Loop_Retry.py      An edge pointing backwards, with a cap
-│       ├── Project_PW_FlakyFinder.py  The retry loop around REAL Playwright
-│       └── tests/test_login.py    Two live tests: one passes, one always fails
+│   │   ├── Project_PW_FlakyFinder.py  The retry loop around REAL Playwright
+│   │   └── tests/test_login.py    Two live tests: one passes, one always fails
+│   └── recap/                     The same four ideas, re-taught in miniature
+│       ├── 01-04_*.py             Hello graph -> pipeline -> branch -> loop
+│       ├── Project_FlakyTestFinder_MIN.py  Two build reports in, a verdict out
+│       └── builds/build_1.json    10 tests: 8 stable, 1 flaky, 1 broken
 │
 └── Project_Job_TRACKERAI/         Local-first job application tracker
     ├── README.md
@@ -3138,6 +3142,83 @@ Set `HEADED = True` (the default) to watch the browser, with `SLOW_MO_MS` to mak
 
 ---
 
+### Recap - the Minimal Flaky Test Finder
+
+**Concept:** `recap/Project_FlakyTestFinder_MIN.py` reads two build reports as plain JSON and labels every test **STABLE**, **FLAKY** or **BROKEN** by comparing the pair of statuses. No LLM, no browser automation to set up, about 70 lines.
+
+**Why:** A single red test tells you something broke, not *what kind* of broken. Comparing two builds is the cheapest signal that separates a bad test from a bad app.
+
+**Q&A - why use this?**
+- **Q: When do I reach for it?** A: When a suite has flaky tests and nobody can say which. Point it at last night's report and this morning's, and the answer falls out of the comparison.
+- **Q: What does it replace?** A: The habit of re-running a red test and trusting whatever you see. One status is an observation; two statuses are a verdict.
+- **Q: What is the gotcha?** A: Two builds can only ever *suspect* flakiness. `("passed", "failed")` and `("failed", "passed")` are the same finding, and a test that fails 1 run in 20 will look stable in both. That is why the graph runs a third confirmation pass.
+
+```mermaid
+flowchart TD
+    S([START]) --> LB["load_builds<br/>read both JSON reports"]
+    LB --> C["compare<br/>pair the two statuses"]
+    C -.->|"a flaky test exists"| CF["confirm_flaky<br/>a third run, real Chromium"]
+    C -.->|"nothing to rerun"| R["report"]
+    CF --> R
+    R --> E([END])
+
+    style LB fill:#13294B,color:#fff
+    style C fill:#13294B,color:#fff
+    style R fill:#1E8A5A,color:#fff
+    style CF fill:#FFF5E1,stroke:#D98E1F,stroke-width:2px
+```
+
+The dotted arrows are the conditional edge from lesson `03`: `confirm_flaky` is skipped entirely when the comparison turns up nothing.
+
+**Code sample - the whole classification rule:**
+
+```python
+def compare(state: State) -> dict:
+    """02 - step two: one status per test is not a verdict. Two is."""
+    b1, b2 = state["runs"]
+    stable, flaky, broken = [], [], []
+    for test in b1:
+        pair = (b1[test], b2[test])
+        if pair == ("passed", "passed"):
+            stable.append(test)
+        elif pair == ("failed", "failed"):
+            broken.append(test)          # the app is wrong
+        else:
+            flaky.append(test)           # the test is wrong
+    return {"stable": stable, "flaky": flaky, "broken": broken}
+```
+
+**Run it:**
+
+```bash
+cd chapter_18_LangGraph/recap
+venv/bin/pip install -U langgraph playwright && venv/bin/playwright install chromium
+venv/bin/python Project_FlakyTestFinder_MIN.py
+open graph.html          # the graph, rendered
+```
+
+```
+TEST                             BUILD 1  BUILD 2  VERDICT
+----------------------------------------------------------------
+test_checkout_form_validation    passed   passed   STABLE
+test_checkout_tax_total          passed   failed   FLAKY
+test_sso_login_button            failed   failed   BROKEN
+
+8 stable, 1 flaky, 1 broken
+test_checkout_tax_total passed on rerun 3 -> FLAKY, not broken
+```
+
+| | `src/Project_PW_FlakyFinder.py` | `recap/Project_FlakyTestFinder_MIN.py` |
+|:--|:--|:--|
+| Input | runs pytest itself | two JSON files already on disk |
+| Needs | Chromium, a live site | nothing (the Playwright node is a stub page) |
+| Loop | re-runs until green or capped | one confirmation pass |
+| Use it to teach | the retry loop | why one run is not a verdict |
+
+**One debugging note worth keeping:** rendering that Mermaid in a browser, `wait_for_selector("pre.mermaid svg")` returns *too early*. Mermaid inserts the `<svg>` before drawing into it, so a screenshot taken then is blank. Wait on the content instead: `wait_for_function("document.querySelectorAll('pre.mermaid .node').length >= 6")`. Same class of bug as asserting on a container that exists before its children render.
+
+---
+
 ## Project - Job Tracker AI
 
 `Project_Job_TRACKERAI/` is a local-first job application tracker built as a Vite + React single-page app. It stores every job card in the browser with IndexedDB through the `idb` library, so there is no backend, authentication, or external database.
@@ -3215,6 +3296,7 @@ You can read it linearly (chapter 01 → 07) or jump straight to a project:
 - **"I want the answer to stream in token by token."** → `chapter_17_LangChain/src/chapters/003_Hello_Gemini_Steam.py`.
 - **"I want the whole LangChain chapter as readable notes."** → `chapter_17_LangChain/LangChain_Notes.html` — open in a browser.
 - **"I want to retry a failing test automatically and know if it is flaky."** → `chapter_18_LangGraph/src/Project_PW_FlakyFinder.py` — a LangGraph loop around real Playwright.
+- **"I have two build reports and I want to know which test is flaky."** → `chapter_18_LangGraph/recap/Project_FlakyTestFinder_MIN.py` — 70 lines, no LLM, no live site.
 - **"I want control flow I can read, not an agent that decides everything."** → `chapter_18_LangGraph/src/` — state, conditional edges and loops in four small scripts.
 - **"I want a Jira ticket to become a plan, a browser run and a Slack post."** → `chapter_17_LangChain/src/chapters/013_FULL_E2E_Fetch_JIRA_Local_RAG_QA_Orch.py` — six stages, two human gates.
 - **"I want a RAG that spots duplicate test cases before I write new ones."** → `chapter_17_LangChain/src/chapters/tta_rag.py` — 20 cases, fastembed, no server.
