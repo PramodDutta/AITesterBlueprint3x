@@ -87,3 +87,8 @@ test_plan_*.json
 chapter_18_LangGraph/src/report.xml
 chapter_18_LangGraph/capstone/reports/
 .gstack/
+
+# Chapter 18 TypeScript recap
+chapter_18_LangGraph/recap/ts/node_modules/
+chapter_18_LangGraph/recap/ts/test-results/
+chapter_18_LangGraph/recap/ts/playwright-report/

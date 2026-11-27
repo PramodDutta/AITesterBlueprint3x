@@ -1,0 +1,303 @@
+{
+  "config": {
+    "argv": [
+      "/Users/promode/.hermes/node/bin/node",
+      "/Users/promode/Documents/AITesterBlueprint3x/chapter_18_LangGraph/recap/ts/node_modules/.bin/playwright",
+      "test",
+      "--reporter=json"
+    ],
+    "configFile": "/Users/promode/Documents/AITesterBlueprint3x/chapter_18_LangGraph/recap/ts/playwright.config.ts",
+    "rootDir": "/Users/promode/Documents/AITesterBlueprint3x/chapter_18_LangGraph/recap/ts/tests",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/Users/promode/Documents/AITesterBlueprint3x/chapter_18_LangGraph/recap/ts/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "",
+        "name": "",
+        "testDir": "/Users/promode/Documents/AITesterBlueprint3x/chapter_18_LangGraph/recap/ts/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "filteredProjects": [
+      {
+        "grep": {},
+        "grepInvert": null,
+        "outputDir": "/Users/promode/Documents/AITesterBlueprint3x/chapter_18_LangGraph/recap/ts/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "name": "",
+        "testDir": "/Users/promode/Documents/AITesterBlueprint3x/chapter_18_LangGraph/recap/ts/tests",
+        "snapshotDir": "/Users/promode/Documents/AITesterBlueprint3x/chapter_18_LangGraph/recap/ts/tests",
+        "testIgnore": [],
+        "testMatch": "**/*.@(spec|test).?(c|m)[jt]s?(x)",
+        "timeout": 30000,
+        "use": {
+          "browserName": "chromium"
+        },
+        "dependencies": [],
+        "ignoreSnapshots": false,
+        "__projectId": ""
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "default",
+    "updateSourceMethod": "patch",
+    "version": "1.65.1",
+    "workers": 8,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "login.spec.ts",
+      "file": "login.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "valid_login",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1209,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-27T15:11:22.613Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "41d3fd2474a19feb00a1-a3fdc62cf90823e97a2d",
+          "file": "login.spec.ts",
+          "line": 22,
+          "column": 1
+        },
+        {
+          "title": "invalid_password",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 903,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-27T15:11:23.973Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "41d3fd2474a19feb00a1-f57b608b23b06d084695",
+          "file": "login.spec.ts",
+          "line": 27,
+          "column": 1
+        },
+        {
+          "title": "empty_username",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 667,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-27T15:11:24.886Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "41d3fd2474a19feb00a1-fa99d48ed0401f86f5b2",
+          "file": "login.spec.ts",
+          "line": 32,
+          "column": 1
+        },
+        {
+          "title": "locked_out_user",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 729,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-27T15:11:25.559Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "41d3fd2474a19feb00a1-432e41bb44f273e1419d",
+          "file": "login.spec.ts",
+          "line": 41,
+          "column": 1
+        },
+        {
+          "title": "products_load",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 1968,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveCount\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator:  locator('article')\nExpected: \u001b[32m6\u001b[39m\nReceived: \u001b[31m0\u001b[39m\nTimeout:  50ms\n\nCall log:\n\u001b[2m  - Expect \"toHaveCount\" locator('article') with timeout 50ms\u001b[22m\n\u001b[2m  - waiting for locator('article')\u001b[22m\n\u001b[2m    33 × locator resolved to 0 elements\u001b[22m\n\u001b[2m       - unexpected value \"0\"\u001b[22m\n\u001b[2m    - waiting for \"https://app.thetestingacademy.com/playwright/ttacart/inventory.html\" navigation to finish...\u001b[22m\n",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveCount\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator:  locator('article')\nExpected: \u001b[32m6\u001b[39m\nReceived: \u001b[31m0\u001b[39m\nTimeout:  50ms\n\nCall log:\n\u001b[2m  - Expect \"toHaveCount\" locator('article') with timeout 50ms\u001b[22m\n\u001b[2m  - waiting for locator('article')\u001b[22m\n\u001b[2m    33 × locator resolved to 0 elements\u001b[22m\n\u001b[2m       - unexpected value \"0\"\u001b[22m\n\u001b[2m    - waiting for \"https://app.thetestingacademy.com/playwright/ttacart/inventory.html\" navigation to finish...\u001b[22m\n\n    at /Users/promode/Documents/AITesterBlueprint3x/chapter_18_LangGraph/recap/ts/tests/login.spec.ts:48:41",
+                    "location": {
+                      "file": "/Users/promode/Documents/AITesterBlueprint3x/chapter_18_LangGraph/recap/ts/tests/login.spec.ts",
+                      "column": 41,
+                      "line": 48
+                    },
+                    "snippet": "  46 | test(\"products_load\", async ({ page }) => {\n  47 |   await login(page, USER, PASSWORD);\n> 48 |   await expect(page.locator(\"article\")).toHaveCount(6, { timeout: FLAKY ? 50 : 10_000 });\n     |                                         ^\n  49 | });\n  50 |"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/Users/promode/Documents/AITesterBlueprint3x/chapter_18_LangGraph/recap/ts/tests/login.spec.ts",
+                        "column": 41,
+                        "line": 48
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveCount\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator:  locator('article')\nExpected: \u001b[32m6\u001b[39m\nReceived: \u001b[31m0\u001b[39m\nTimeout:  50ms\n\nCall log:\n\u001b[2m  - Expect \"toHaveCount\" locator('article') with timeout 50ms\u001b[22m\n\u001b[2m  - waiting for locator('article')\u001b[22m\n\u001b[2m    33 × locator resolved to 0 elements\u001b[22m\n\u001b[2m       - unexpected value \"0\"\u001b[22m\n\u001b[2m    - waiting for \"https://app.thetestingacademy.com/playwright/ttacart/inventory.html\" navigation to finish...\u001b[22m\n\n\n  46 | test(\"products_load\", async ({ page }) => {\n  47 |   await login(page, USER, PASSWORD);\n> 48 |   await expect(page.locator(\"article\")).toHaveCount(6, { timeout: FLAKY ? 50 : 10_000 });\n     |                                         ^\n  49 | });\n  50 |\n    at /Users/promode/Documents/AITesterBlueprint3x/chapter_18_LangGraph/recap/ts/tests/login.spec.ts:48:41"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-27T15:11:26.294Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/promode/Documents/AITesterBlueprint3x/chapter_18_LangGraph/recap/ts/test-results/login-products-load/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/Users/promode/Documents/AITesterBlueprint3x/chapter_18_LangGraph/recap/ts/tests/login.spec.ts",
+                    "column": 41,
+                    "line": 48
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "41d3fd2474a19feb00a1-96ba0eeaf16adc5fd944",
+          "file": "login.spec.ts",
+          "line": 46,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-11-27T15:11:22.396Z",
+    "duration": 5900.465,
+    "expected": 4,
+    "skipped": 0,
+    "unexpected": 1,
+    "flaky": 0
+  }
+}

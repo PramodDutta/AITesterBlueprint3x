@@ -1,15 +1,25 @@
 {
   "build": 2,
   "results": [
-    {"test": "test_login_valid",             "status": "passed"},
-    {"test": "test_login_invalid_message",   "status": "passed"},
-    {"test": "test_products_count",          "status": "passed"},
-    {"test": "test_sort_price_low_high",     "status": "passed"},
-    {"test": "test_add_to_cart",             "status": "passed"},
-    {"test": "test_cart_badge",              "status": "passed"},
-    {"test": "test_remove_from_cart",        "status": "passed"},
-    {"test": "test_checkout_form_validation","status": "passed"},
-    {"test": "test_checkout_tax_total",      "status": "failed"},
-    {"test": "test_sso_login_button",        "status": "failed"}
+    {
+      "test": "test_valid_login",
+      "status": "passed"
+    },
+    {
+      "test": "test_invalid_password",
+      "status": "passed"
+    },
+    {
+      "test": "test_empty_username",
+      "status": "passed"
+    },
+    {
+      "test": "test_locked_out_user",
+      "status": "passed"
+    },
+    {
+      "test": "test_products_load",
+      "status": "failed"
+    }
   ]
 }

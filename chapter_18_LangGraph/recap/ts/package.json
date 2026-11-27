@@ -1,0 +1,22 @@
+{
+  "name": "flaky-test-finder-ts",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build:1": "playwright test --reporter=json > builds/build_1.json",
+    "build:2": "FLAKY_BUILD=2 playwright test --reporter=json > builds/build_2.json",
+    "finder": "tsx flakyTestFinderFinal.ts"
+  },
+  "dependencies": {
+    "@langchain/core": "^1.5.1",
+    "@langchain/groq": "^1.3.2",
+    "@langchain/langgraph": "^1.7.5",
+    "dotenv": "^18.0.10",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.65.1",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  }
+}

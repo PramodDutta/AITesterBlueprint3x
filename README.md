@@ -674,10 +674,14 @@ mindmap
 │       ├── 004_Loop_Retry.py      An edge pointing backwards, with a cap
 │   │   ├── Project_PW_FlakyFinder.py  The retry loop around REAL Playwright
 │   │   └── tests/test_login.py    Two live tests: one passes, one always fails
-│   └── recap/                     The same four ideas, re-taught in miniature
-│       ├── 01-04_*.py             Hello graph -> pipeline -> branch -> loop
-│       ├── Project_FlakyTestFinder_MIN.py  Two build reports in, a verdict out
-│       └── builds/build_1.json    10 tests: 8 stable, 1 flaky, 1 broken
+│   └── recap/                     The seven ideas, re-taught in miniature
+│       ├── 01-07_*.py             Graph -> pipeline -> branch -> loop ->
+│       │                          memory -> human-in-loop -> LLM node
+│       ├── Project_FlakyTestFinder_MIN.py   Two JSON builds in, a verdict out
+│       ├── Project_FlakyTestFinderFinal.py  + real Playwright, Groq, quarantine
+│       ├── pw_tests/test_login.py 5 live TTACart login tests, 1 planted flaky
+│       ├── run_build.py           pytest -> builds/build_N.json
+│       └── ts/                    The same graph in TypeScript (LangGraph JS)
 │
 └── Project_Job_TRACKERAI/         Local-first job application tracker
     ├── README.md
@@ -3219,6 +3223,107 @@ test_checkout_tax_total passed on rerun 3 -> FLAKY, not broken
 
 ---
 
+### Final Project - Flaky Test Finder (Python and TypeScript)
+
+**Concept:** `recap/Project_FlakyTestFinderFinal.py` runs a real 5-test Playwright login suite twice, compares the two reports to find the flaky test, asks **Groq** *why* it flaked, and quarantines it either automatically or after asking a human.
+
+**Why:** Everything before it either simulated the results or stopped at "this one is flaky". This closes the loop: real browser, real failure, a cause, and an action taken.
+
+**Q&A - why use this?**
+- **Q: When do I reach for it?** A: When a suite is red often enough that nobody trusts it. Run the builds, and the agent tells you which test to quarantine and what kind of problem it is.
+- **Q: What does it replace?** A: The engineer who re-runs a red test, shrugs at the green, and moves on. One status is an observation; a pair is a verdict.
+- **Q: What is the gotcha?** A: Two builds can only *suspect* flakiness. `("passed","failed")` and `("failed","passed")` are the same finding, and a test that fails 1 run in 20 looks perfectly stable in both. Treat the output as a shortlist, not proof.
+
+```mermaid
+flowchart TD
+    S([START]) --> LB["load_builds<br/>read both reports"]
+    LB --> C["compare<br/>pair the two statuses"]
+    C -.->|"nothing flaky"| R["report"]
+    C -.->|"flaky found"| T["triage_flaky<br/>Groq says WHY"]
+    T -.->|"--human"| AH["ask_human<br/>interrupt&#40;&#41; pauses the graph"]
+    T -.->|"auto"| Q["quarantine"]
+    AH --> R
+    Q --> R
+    R --> E([END])
+
+    style LB fill:#13294B,color:#fff
+    style C fill:#13294B,color:#fff
+    style T fill:#7A3FC4,color:#fff
+    style AH fill:#FFF5E1,stroke:#D98E1F,stroke-width:2px
+    style R fill:#1E8A5A,color:#fff
+```
+
+All seven lessons do real work here: **01** state, **02** `load -> compare`, **03** two conditional edges, **04** the pair-not-single rule, **05** a checkpointer, **06** `interrupt()`, **07** a Groq node with structured output.
+
+**Code sample - the LLM explains, Python still decides:**
+
+```python
+class Triage(BaseModel):                      # 07 - an enum, not prose
+    cause: Literal["timing", "test_bug", "product_bug", "environment"]
+    reason: str = Field(description="one sentence")
+
+def triage(state: State) -> dict:
+    b1, b2 = state["runs"]
+    test = state["flaky"][0]
+    t = get_llm().with_structured_output(Triage).invoke(
+        "You triage flaky UI tests. One sentence.\n"
+        f"Test: {test}\nBuild 1: {b1[test]}   Build 2: {b2[test]}\n"
+        "It asserts the product grid has 6 items after login.")
+    return {"triage": t}
+
+def route_quarantine(state: State) -> Literal["ask_human", "quarantine"]:
+    return "ask_human" if "--human" in sys.argv else "quarantine"   # Python routes
+```
+
+**Run it:**
+
+```bash
+cd chapter_18_LangGraph/recap
+venv/bin/python run_build.py 1 && venv/bin/python run_build.py 2
+venv/bin/python Project_FlakyTestFinderFinal.py              # auto-quarantine
+venv/bin/python Project_FlakyTestFinderFinal.py --human      # ask me first
+
+cd ts && npm install && npx playwright install chromium      # the TypeScript twin
+npm run build:1 && npm run build:2
+npm run finder -- --human
+```
+
+```
+TEST                    BUILD 1  BUILD 2  VERDICT
+--------------------------------------------------------
+test_valid_login        passed   passed   PASSED
+test_invalid_password   passed   passed   PASSED
+test_empty_username     passed   passed   PASSED
+test_locked_out_user    passed   passed   PASSED
+test_products_load      passed   failed   FLAKY
+
+4 passed, 1 flaky, 0 broken
+cause: timing - the test checks the product grid before the async load completes
+quarantined: test_products_load
+```
+
+**Python vs TypeScript - same graph, four API differences:**
+
+| | Python | TypeScript |
+|:--|:--|:--|
+| State | `TypedDict` | `Annotation.Root({...})` |
+| Builder | mutate a `builder` object | chained `.addNode().addEdge()` |
+| Node vs channel names | may be the same | **must differ**, or it throws |
+| Test report | `--junitxml` + `xml.etree` | `--reporter=json`, built in |
+
+That third row is the one that bites. Porting the Python graph straight across fails at build time:
+
+```
+Error: triage is already being used as a state attribute (a.k.a. a channel),
+cannot also be used as a node name.
+```
+
+Python is happy with a `triage` node writing a `triage` key; LangGraph JS refuses, so the node is `triage_flaky`.
+
+**Two honest caveats.** The flaky test is **simulated, not random**: `FLAKY_BUILD=2` drops one timeout to 50ms, because a genuinely random test turns a classroom demo into a coin toss. And `route_quarantine` reads `sys.argv` from inside a node, which is convenient but makes the graph awkward to import and test; a state key set at `invoke()` time would be cleaner.
+
+---
+
 ## Project - Job Tracker AI
 
 `Project_Job_TRACKERAI/` is a local-first job application tracker built as a Vite + React single-page app. It stores every job card in the browser with IndexedDB through the `idb` library, so there is no backend, authentication, or external database.
@@ -3296,6 +3401,7 @@ You can read it linearly (chapter 01 → 07) or jump straight to a project:
 - **"I want the answer to stream in token by token."** → `chapter_17_LangChain/src/chapters/003_Hello_Gemini_Steam.py`.
 - **"I want the whole LangChain chapter as readable notes."** → `chapter_17_LangChain/LangChain_Notes.html` — open in a browser.
 - **"I want to retry a failing test automatically and know if it is flaky."** → `chapter_18_LangGraph/src/Project_PW_FlakyFinder.py` — a LangGraph loop around real Playwright.
+- **"I want the whole thing: real tests, an LLM cause, and a quarantine decision."** → `chapter_18_LangGraph/recap/Project_FlakyTestFinderFinal.py` — all seven lessons, Python and TypeScript.
 - **"I have two build reports and I want to know which test is flaky."** → `chapter_18_LangGraph/recap/Project_FlakyTestFinder_MIN.py` — 70 lines, no LLM, no live site.
 - **"I want control flow I can read, not an agent that decides everything."** → `chapter_18_LangGraph/src/` — state, conditional edges and loops in four small scripts.
 - **"I want a Jira ticket to become a plan, a browser run and a Slack post."** → `chapter_17_LangChain/src/chapters/013_FULL_E2E_Fetch_JIRA_Local_RAG_QA_Orch.py` — six stages, two human gates.
