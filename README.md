@@ -126,7 +126,7 @@ mindmap
       ex_01 - print + comments
       ex_02 - keywords + identifiers + variables
         Identifier rules cheat sheet
-        Dynamic typing + type&#40;&#41;
+        Dynamic typing and the type function
         BODMAS + max/min
       ex_03 - literals + data types
         Multi-line comments
@@ -836,11 +836,11 @@ Goal: prove RICE-POT can build production code, not just test cases.
 flowchart TD
     CFG[config.properties] --> CR[ConfigReader]
     CR --> BT[BaseTest]
-    BT -->|@BeforeMethod| D[ChromeDriver headless]
-    BT -->|@AfterMethod| Q[driver.quit]
+    BT -->|"@BeforeMethod"| D[ChromeDriver headless]
+    BT -->|"@AfterMethod"| Q[driver.quit]
     LP[LoginPage - POM + PageFactory] --> XP["@FindBy xpath only"]
     VT[ValidLoginTest] --> LP
-    IT[InvalidLoginTest + @DataProvider] --> LP
+    IT["InvalidLoginTest + @DataProvider"] --> LP
     VT -.extends.-> BT
     IT -.extends.-> BT
     SUITE[testng.xml] --> VT
